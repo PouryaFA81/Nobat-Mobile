@@ -13,6 +13,11 @@ interface AppointmentDao {
     )
     fun forDay(accountId: Long, day: String): Flow<List<Appointment>>
 
+    @Query(
+        "SELECT * FROM appointments WHERE accountId = :accountId AND day = :day AND personnelId = :personnelId ORDER BY startMinute ASC"
+    )
+    fun forDayPersonnel(accountId: Long, day: String, personnelId: Long): Flow<List<Appointment>>
+
     /** Distinct ISO dates with at least one appointment in [start, end] inclusive. */
     @Query(
         "SELECT DISTINCT day FROM appointments WHERE accountId = :accountId AND day BETWEEN :start AND :end ORDER BY day ASC"
@@ -23,6 +28,16 @@ interface AppointmentDao {
         "SELECT day, COUNT(*) as count FROM appointments WHERE accountId = :accountId AND day BETWEEN :start AND :end GROUP BY day"
     )
     fun countsBetween(accountId: Long, start: String, end: String): Flow<List<DayCount>>
+
+    @Query(
+        "SELECT day, COUNT(*) as count FROM appointments WHERE accountId = :accountId AND day BETWEEN :start AND :end AND personnelId = :personnelId GROUP BY day"
+    )
+    fun countsBetweenPersonnel(
+        accountId: Long,
+        start: String,
+        end: String,
+        personnelId: Long,
+    ): Flow<List<DayCount>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(appointment: Appointment): Long

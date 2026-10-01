@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-01
+
+### Added
+- **Role** on Account: **Admin / Secretary** / **مدیر یا منشی** · **Staff** / **پرسنل** (Room migration v3→v4)
+- **Link to personnel** / **پیوند به پرسنل** — pick from Personnel list (required for Staff My schedule)
+- **My schedule** / **برنامهٔ من**: Admin tabs **Everyone** / **همه** + **My schedule**; Staff sees My schedule only (filter by linked personnel) · **no FAB**
+- **Clinic code** / **کد مطب** row — Coming soon (Phase 2)
+- **Local in-app notifications** on this device for book + cancel (NotificationCompat channel **Clinic notifications** / **اعلان‌های مطب**); POST_NOTIFICATIONS on API 33+
+
+### Changed
+- Day/month lists honor role + schedule filter; Staff cannot book
+
 ## [0.12.0] - 2026-10-01
 
 ### Added

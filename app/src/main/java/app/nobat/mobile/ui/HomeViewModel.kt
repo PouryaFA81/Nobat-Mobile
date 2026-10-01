@@ -8,11 +8,13 @@ import app.nobat.mobile.R
 import app.nobat.mobile.calendar.Jalali
 import app.nobat.mobile.data.Account
 import app.nobat.mobile.data.AccountRepository
+import app.nobat.mobile.data.AccountRole
 import app.nobat.mobile.data.Appointment
 import app.nobat.mobile.data.AppointmentDao
 import app.nobat.mobile.data.DayCount
 import app.nobat.mobile.data.Personnel
 import app.nobat.mobile.data.PersonnelDao
+import app.nobat.mobile.notify.ClinicNotifier
 import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.notify.SmtpClient
 import app.nobat.mobile.notify.TelegramClient
@@ -32,6 +34,12 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/** Who's schedule is shown on day/month lists. */
+enum class ScheduleFilter {
+    EVERYONE,
+    MY_SCHEDULE,
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModel(
@@ -73,6 +81,44 @@ class HomeViewModel(
             else personnelDao.observeForAccount(accountId)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Admin tab selection; Staff always uses My schedule. */
+    private val _scheduleFilter = MutableStateFlow(ScheduleFilter.EVERYONE)
+    val scheduleFilter: StateFlow<ScheduleFilter> = _scheduleFilter
+
+    /** Effective filter: Staff → My schedule; Admin → tab choice. */
+    val effectiveScheduleFilter: StateFlow<ScheduleFilter> =
+        combine(unlockedAccount, _scheduleFilter) { account, tab ->
+            when {
+                account == null -> ScheduleFilter.EVERYONE
+                AccountRole.isStaff(account.role) -> ScheduleFilter.MY_SCHEDULE
+                else -> tab
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ScheduleFilter.EVERYONE)
+
+    val canBook: StateFlow<Boolean> =
+        unlockedAccount.map { account ->
+            account != null && AccountRole.isAdmin(account.role)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    val showScheduleTabs: StateFlow<Boolean> =
+        unlockedAccount.map { account ->
+            account != null && AccountRole.isAdmin(account.role)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /** Linked personnel id on the unlocked account (0 = none). */
+    val linkedPersonnelId: StateFlow<Long> =
+        unlockedAccount.map { it?.linkedPersonnelId ?: 0L }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
+
+    /**
+     * When My schedule is active and no personnel link, day/month should show the
+     * "Link yourself under Account first" empty state.
+     */
+    val needsPersonnelLink: StateFlow<Boolean> =
+        combine(effectiveScheduleFilter, linkedPersonnelId) { filter, linked ->
+            filter == ScheduleFilter.MY_SCHEDULE && linked <= 0L
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     private val _needsOrphanMigration = MutableStateFlow(false)
     val needsOrphanMigration: StateFlow<Boolean> = _needsOrphanMigration
 
@@ -87,37 +133,61 @@ class HomeViewModel(
         _useJalali.value = enabled
     }
 
+    fun setScheduleFilter(filter: ScheduleFilter) {
+        _scheduleFilter.value = filter
+    }
+
     init {
         viewModelScope.launch {
             _needsOrphanMigration.value = accountRepo.needsOrphanMigration()
             _bootReady.value = true
         }
+        ClinicNotifier.ensureChannel(appContext)
     }
 
     val appointments: StateFlow<List<Appointment>> =
-        combine(_day, unlockedAccountId) { d, accountId -> d to accountId }
-            .flatMapLatest { (d, accountId) ->
-                if (accountId == null) flowOf(emptyList())
-                else dao.forDay(accountId, d.format(dayFmt))
+        combine(_day, unlockedAccountId, effectiveScheduleFilter, linkedPersonnelId) { d, accountId, filter, linked ->
+            ScheduleQuery(d, accountId, filter, linked)
+        }
+            .flatMapLatest { q ->
+                if (q.accountId == null) flowOf(emptyList())
+                else when {
+                    q.filter == ScheduleFilter.MY_SCHEDULE && q.linked <= 0L ->
+                        flowOf(emptyList())
+                    q.filter == ScheduleFilter.MY_SCHEDULE ->
+                        dao.forDayPersonnel(q.accountId, q.day.format(dayFmt), q.linked)
+                    else ->
+                        dao.forDay(q.accountId, q.day.format(dayFmt))
+                }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Map of ISO day → appointment count for the visible calendar month. */
     val monthCounts: StateFlow<Map<String, Int>> =
-        combine(_monthAnchor, unlockedAccountId, _useJalali) { anchor, accountId, jalali ->
-            Triple(anchor, accountId, jalali)
+        combine(_monthAnchor, unlockedAccountId, _useJalali, effectiveScheduleFilter, linkedPersonnelId) {
+                anchor, accountId, jalali, filter, linked ->
+            MonthQuery(anchor, accountId, jalali, filter, linked)
         }
-            .flatMapLatest { (anchor, accountId, jalali) ->
-                if (accountId == null) flowOf(emptyMap())
-                else {
-                    val (start, end) = if (jalali) {
-                        Jalali.monthBounds(anchor)
+            .flatMapLatest { q ->
+                if (q.accountId == null) flowOf(emptyMap())
+                else if (q.filter == ScheduleFilter.MY_SCHEDULE && q.linked <= 0L) {
+                    flowOf(emptyMap())
+                } else {
+                    val (start, end) = if (q.jalali) {
+                        Jalali.monthBounds(q.anchor)
                     } else {
-                        val ym = YearMonth.from(anchor)
+                        val ym = YearMonth.from(q.anchor)
                         ym.atDay(1) to ym.atEndOfMonth()
                     }
-                    dao.countsBetween(accountId, start.format(dayFmt), end.format(dayFmt))
-                        .map { list: List<DayCount> -> list.associate { it.day to it.count } }
+                    val startIso = start.format(dayFmt)
+                    val endIso = end.format(dayFmt)
+                    if (q.filter == ScheduleFilter.MY_SCHEDULE) {
+                        dao.countsBetweenPersonnel(q.accountId, startIso, endIso, q.linked)
+                            .map { list: List<DayCount> -> list.associate { it.day to it.count } }
+                    } else {
+                        dao.countsBetween(q.accountId, startIso, endIso)
+                            .map { list: List<DayCount> -> list.associate { it.day to it.count } }
+                    }
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
@@ -168,6 +238,7 @@ class HomeViewModel(
     /**
      * Book appointment assigned to [personnelId]; confirmation + 1h reminder go to that
      * person’s email. If no personnel exist, returns [BookResult.NeedPersonnel] without saving.
+     * Staff accounts cannot book (UI hides FAB); still guarded here.
      */
     suspend fun book(
         initials: String,
@@ -180,6 +251,8 @@ class HomeViewModel(
         val clean = initials.trim()
         if (clean.isEmpty()) return BookResult.Failed
         val accountId = session.unlockedAccountId.value ?: return BookResult.Failed
+        val account = accountRepo.getAccount(accountId) ?: return BookResult.Failed
+        if (!AccountRole.isAdmin(account.role)) return BookResult.Failed
 
         val staffList = personnelDao.listForAccount(accountId)
         if (staffList.isEmpty()) return BookResult.NeedPersonnel
@@ -265,6 +338,10 @@ class HomeViewModel(
             TelegramClient.sendMessage(tg.botToken, tg.chatId, tgText)
         }
 
+        // Local in-app notification on this device (Phase 1).
+        val time = "%02d:%02d".format(saved.startMinute / 60, saved.startMinute % 60)
+        ClinicNotifier.notifyBooked(appContext, saved.initials, saved.day, time)
+
         return BookResult.Ok(
             reminderScheduled = reminderScheduled,
             confirmationSent = confirmationSent,
@@ -276,8 +353,18 @@ class HomeViewModel(
     fun cancel(id: Long) {
         val accountId = session.unlockedAccountId.value ?: return
         viewModelScope.launch {
+            val existing = dao.get(accountId, id)
             ReminderScheduler.cancel(appContext, id)
             dao.delete(accountId, id)
+            if (existing != null) {
+                val time = "%02d:%02d".format(existing.startMinute / 60, existing.startMinute % 60)
+                ClinicNotifier.notifyCancelled(
+                    appContext,
+                    existing.initials,
+                    existing.day,
+                    time,
+                )
+            }
         }
     }
 
@@ -330,7 +417,26 @@ class HomeViewModel(
         val accountId = session.unlockedAccountId.value ?: return
         viewModelScope.launch {
             personnelDao.delete(accountId, id)
+            // Clear link if this account pointed at the deleted person.
+            val account = accountRepo.getAccount(accountId) ?: return@launch
+            if (account.linkedPersonnelId == id) {
+                accountRepo.setLinkedPersonnel(accountId, 0L)
+            }
         }
+    }
+
+    suspend fun setRole(role: String): Boolean {
+        val id = session.unlockedAccountId.value ?: return false
+        val ok = accountRepo.setRole(id, role)
+        if (ok && AccountRole.isStaff(role)) {
+            _scheduleFilter.value = ScheduleFilter.MY_SCHEDULE
+        }
+        return ok
+    }
+
+    suspend fun setLinkedPersonnel(personnelId: Long): Boolean {
+        val id = session.unlockedAccountId.value ?: return false
+        return accountRepo.setLinkedPersonnel(id, personnelId)
     }
 
     suspend fun createAccount(
@@ -341,6 +447,7 @@ class HomeViewModel(
         val result = accountRepo.createAccount(displayName, password, attachOrphans)
         if (result.isSuccess) {
             _needsOrphanMigration.value = false
+            _scheduleFilter.value = ScheduleFilter.EVERYONE
         }
         return result.isSuccess
     }
@@ -348,6 +455,14 @@ class HomeViewModel(
     /** Open a local profile without password — day-to-day unlock is PIN/biometric. */
     fun openAccount(accountId: Long) {
         session.unlock(accountId)
+        viewModelScope.launch {
+            val account = accountRepo.getAccount(accountId)
+            _scheduleFilter.value = if (account != null && AccountRole.isStaff(account.role)) {
+                ScheduleFilter.MY_SCHEDULE
+            } else {
+                ScheduleFilter.EVERYONE
+            }
+        }
     }
 
     suspend fun changePassword(current: CharArray, newPassword: CharArray): Boolean {
@@ -360,6 +475,21 @@ class HomeViewModel(
     }
 
     fun lastAccountId(): Long? = session.lastAccountId
+
+    private data class ScheduleQuery(
+        val day: LocalDate,
+        val accountId: Long?,
+        val filter: ScheduleFilter,
+        val linked: Long,
+    )
+
+    private data class MonthQuery(
+        val anchor: LocalDate,
+        val accountId: Long?,
+        val jalali: Boolean,
+        val filter: ScheduleFilter,
+        val linked: Long,
+    )
 
     class Factory(
         private val app: Application,
