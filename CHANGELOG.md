@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-01
+
 ### Added
 - In-app language picker (فارسی / English) on Home — SharedPreferences + AppCompatDelegate.setApplicationLocales
 
@@ -46,6 +48,7 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.4.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.0
 [0.3.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.3.0
 [0.2.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.2.0
 [0.1.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.1.0
