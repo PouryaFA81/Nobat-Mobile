@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
+- Integrations shell: **Google Calendar** / **تقویم گوگل** row (Coming soon)
 - **Account hub:** Security (live) plus Integrations / Backup / Reports shells marked Coming soon
 - **App lock (live):** PIN (PBKDF2 in EncryptedSharedPreferences) + Fingerprint (BiometricPrompt); enable/disable/change PIN; biometric disabled gracefully without hardware
 - **Unlock gate:** PIN pad + biometric after account sign-in and on resume when lock enabled (Entry/Sign-in not blocked)

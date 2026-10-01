@@ -68,6 +68,12 @@ fun IntegrationsPane(
             tokenLabel = null,
             onConnect = ::showSoon,
         )
+        HorizontalDivider()
+        IntegrationBlock(
+            title = stringResource(R.string.google_calendar),
+            tokenLabel = null,
+            onConnect = ::showSoon,
+        )
     }
 }
 
