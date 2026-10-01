@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.7.0">v0.7.0</a></em>
+  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.8.0">v0.8.0</a></em>
 </p>
 
 ---
@@ -21,9 +21,10 @@ Small clinics, counselors, and front-desk teams who want a **simple appointment 
 
 If you already self-host the original [Nobat](https://github.com/PouryaFA81/Nobat) server, keep that for privacy-first hosting. **Nobat Mobile** is the sibling product for people who just want an app on the phone.
 
-## What’s in the app (v0.7.0)
+## What’s in the app (v0.8.0)
 
 - **Local accounts** — Several profiles on one phone, each with a password; data stays on the device  
+- **App lock** — PIN (auto-submit) and optional fingerprint  
 - **Calendar** — Month grid → day list; book, cancel, empty-day CTA  
 - **Jalali in Persian** — FA uses the solar calendar (week starts شنبه); English stays Gregorian  
 - **Language** — فارسی (RTL) / English (LTR), including chrome and strings  
@@ -31,8 +32,10 @@ If you already self-host the original [Nobat](https://github.com/PouryaFA81/Noba
 - **Email (SMTP)** — Save your mailbox, test send, confirmation on book, reminder **1 hour before**  
 - **SMS** — Opens your phone’s SMS app with a prefilled message (you tap Send)  
 - **About** — Version, check for updates, GitHub contact links  
+- **Coming soon (shells)** — Integrations (Telegram, Bale, Google Drive, Google Calendar), Backup / Restore, Reports & Print PDF  
 
-Coming next (**0.8.0+**): app lock (PIN / fingerprint), plus Integrations / backup / reports shells (Telegram, Bale, Google Drive & Calendar — marked Coming soon until wired).
+Next: wire those integrations and data tools for real.
+
 
 ## Nobat vs Nobat Mobile
 
@@ -59,7 +62,7 @@ In the app: **Account → Notifications → Email (SMTP)** → **SMTP setup guid
 
 ### Option A — download the APK (recommended)
 
-1. Open [Releases → v0.7.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.7.0) (or the latest pre-release)
+1. Open [Releases → v0.8.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.8.0) (or the latest pre-release)
 2. Download the `.apk`
 3. On your phone, allow install from that source
 4. Open **Nobat Mobile**, create or unlock a local account, then use the calendar
@@ -78,7 +81,7 @@ The first sync can take a few minutes.
 
 ## Status
 
-Pre-release dogfood builds. Core booking, accounts, language, SMTP reminders, and themes are in **v0.7.0**. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
+Pre-release dogfood builds. Booking, accounts, app lock, language, SMTP reminders, and themes are in **v0.8.0**. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
 
 Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
 
