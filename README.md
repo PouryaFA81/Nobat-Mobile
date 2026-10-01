@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.15.1">v0.15.1</a></em>
+  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.16.0">v0.16.0</a></em>
 </p>
 
 ---
@@ -21,7 +21,7 @@ Small clinics, counselors, and front-desk teams who want a **simple appointment 
 
 If you already self-host the original [Nobat](https://github.com/PouryaFA81/Nobat) server, keep that for privacy-first hosting. **Nobat Mobile** is the sibling product for people who just want an app on the phone.
 
-## What’s in the app (v0.15.1)
+## What’s in the app (v0.16.0)
 
 - **Local accounts** — Several profiles on one phone; password for create/change only; unlock with PIN/fingerprint; data stays on the device  
 - **Personnel** — Staff list (name, email, phone); book **Assign to** so SMTP confirmation + 1h reminder go to that person  
@@ -31,6 +31,7 @@ If you already self-host the original [Nobat](https://github.com/PouryaFA81/Noba
 - **Language** — فارسی (RTL) / English (LTR), including chrome and strings  
 - **Theme** — Dark (default) or Light  
 - **Email (SMTP)** — Save your mailbox, test send, confirmation on book, reminder **1 hour before**  
+- **Evening digest** — Optional daily summary of **tomorrow’s** appointments (default 20:00): SMTP per staff, Telegram if Notify on book, Clinic relay `digest`, local notification  
 - **SMS** — Opens your phone’s SMS app with a prefilled message (you tap Send)  
 - **Account hub** — Scrollable sections: Account Management, Preferences, Advanced Settings, About  
 - **About** — Version, check for updates, GitHub contact links  

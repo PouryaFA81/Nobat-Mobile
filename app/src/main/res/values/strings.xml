@@ -105,6 +105,19 @@
 
     <!-- Reminders / theme (Pen) -->
     <string name="remind_1h_before">۱ ساعت قبل یادآوری</string>
+
+    <!-- Evening digest (Pen) -->
+    <string name="evening_digest">خلاصهٔ شامگاهی</string>
+    <string name="evening_digest_on">ارسال خلاصهٔ شامگاهی</string>
+    <string name="digest_time">زمان خلاصه</string>
+    <string name="digest_via_email">ایمیل (SMTP)</string>
+    <string name="digest_empty">فردا نوبتی نیست</string>
+    <string name="digest_subject">برنامهٔ فردا — %1$s</string>
+    <string name="digest_header">نوبت‌های %1$s</string>
+    <string name="digest_line">%1$s · %2$s (%3$d دقیقه)</string>
+    <string name="digest_sent">خلاصه ارسال شد</string>
+    <string name="digest_needs_smtp">اول SMTP را تنظیم کنید</string>
+
     <string name="send_confirmation_now">همین حالا تأیید بفرست</string>
     <string name="reminder_scheduled">یادآوری زمان‌بندی شد</string>
     <string name="confirmation_sent">تأیید ارسال شد</string>
