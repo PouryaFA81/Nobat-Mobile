@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-01
+
 ### Added
 - Local multi-account (device-only): Room `Account` (displayName, PBKDF2-HMAC-SHA256 passwordHash + salt, createdAt)
 - Entry screen: list local profiles → Sign in (password) → Month calendar; **+ Add account** / Create account
@@ -83,6 +85,7 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.5.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.5.0
 [0.4.2]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.2
 [0.4.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.1
 [0.4.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.0
