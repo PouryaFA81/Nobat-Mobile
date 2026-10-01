@@ -11,6 +11,8 @@ import app.nobat.mobile.data.AccountRepository
 import app.nobat.mobile.data.Appointment
 import app.nobat.mobile.data.AppointmentDao
 import app.nobat.mobile.data.DayCount
+import app.nobat.mobile.data.Personnel
+import app.nobat.mobile.data.PersonnelDao
 import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.notify.SmtpClient
 import app.nobat.mobile.remind.ReminderScheduler
@@ -33,6 +35,7 @@ import kotlinx.coroutines.launch
 class HomeViewModel(
     app: Application,
     private val dao: AppointmentDao,
+    private val personnelDao: PersonnelDao,
     private val accountRepo: AccountRepository,
     private val session: AccountSession,
     private val notificationStore: NotificationSettingsStore,
@@ -60,6 +63,12 @@ class HomeViewModel(
     val unlockedAccount: StateFlow<Account?> = combine(accounts, unlockedAccountId) { list, id ->
         list.firstOrNull { it.id == id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val personnel: StateFlow<List<Personnel>> =
+        unlockedAccountId.flatMapLatest { accountId ->
+            if (accountId == null) flowOf(emptyList())
+            else personnelDao.observeForAccount(accountId)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _needsOrphanMigration = MutableStateFlow(false)
     val needsOrphanMigration: StateFlow<Boolean> = _needsOrphanMigration
@@ -145,26 +154,38 @@ class HomeViewModel(
         data class Ok(
             val reminderScheduled: Boolean,
             val confirmationSent: Boolean?,
-            val needRecipient: Boolean,
+            val needPersonnel: Boolean,
             val needSmtp: Boolean,
         ) : BookResult()
         data object Failed : BookResult()
+        /** No staff rows — block mail and prompt user to add personnel. */
+        data object NeedPersonnel : BookResult()
     }
 
     /**
-     * Book appointment; schedule WorkManager reminder when reminders+SMTP ready;
-     * optionally send confirmation email to reminder recipient.
+     * Book appointment assigned to [personnelId]; confirmation + 1h reminder go to that
+     * person’s email. If no personnel exist, returns [BookResult.NeedPersonnel] without saving.
      */
     suspend fun book(
         initials: String,
         startMinute: Int,
         durationMin: Int,
         note: String,
+        personnelId: Long,
         sendConfirmation: Boolean = true,
     ): BookResult {
         val clean = initials.trim()
         if (clean.isEmpty()) return BookResult.Failed
         val accountId = session.unlockedAccountId.value ?: return BookResult.Failed
+
+        val staffList = personnelDao.listForAccount(accountId)
+        if (staffList.isEmpty()) return BookResult.NeedPersonnel
+
+        val person = staffList.firstOrNull { it.id == personnelId }
+            ?: return BookResult.Failed
+        val email = person.email.trim()
+        if (email.isEmpty()) return BookResult.Failed
+
         val appt = Appointment(
             accountId = accountId,
             day = _day.value.format(dayFmt),
@@ -172,6 +193,8 @@ class HomeViewModel(
             durationMin = durationMin.coerceAtLeast(15),
             initials = clean,
             note = note.trim(),
+            personnelId = person.id,
+            personnelEmail = email,
         )
         val newId = dao.upsert(appt)
         val saved = appt.copy(id = newId)
@@ -179,22 +202,19 @@ class HomeViewModel(
 
         var reminderScheduled = false
         var confirmationSent: Boolean? = null
-        var needRecipient = false
         var needSmtp = false
 
         if (settings.remindersOn) {
-            if (ReminderScheduler.isSmtpReady(settings)) {
+            if (ReminderScheduler.canSendToPersonnel(settings, saved)) {
                 ReminderScheduler.schedule(appContext, saved, settings)
                 reminderScheduled = true
-            } else if (settings.smtpHost.isBlank()) {
+            } else if (!ReminderScheduler.isSmtpConfigured(settings)) {
                 needSmtp = true
-            } else if (settings.reminderRecipient.isBlank()) {
-                needRecipient = true
             }
         }
 
         if (sendConfirmation) {
-            if (ReminderScheduler.isSmtpReady(settings)) {
+            if (ReminderScheduler.canSendToPersonnel(settings, saved)) {
                 val time = "%02d:%02d".format(saved.startMinute / 60, saved.startMinute % 60)
                 val subject = appContext.getString(
                     R.string.confirmation_email_subject,
@@ -215,22 +235,21 @@ class HomeViewModel(
                         username = settings.smtpUsername,
                         password = settings.smtpPassword,
                         from = settings.smtpFrom,
-                        to = settings.reminderRecipient,
+                        to = email,
                         subject = subject,
                         body = body,
                     ),
                 )
                 confirmationSent = result.isSuccess
-            } else if (settings.smtpHost.isNotBlank() && settings.reminderRecipient.isBlank()) {
-                needRecipient = true
+            } else if (!ReminderScheduler.isSmtpConfigured(settings) && settings.smtpHost.isNotBlank()) {
+                needSmtp = true
             }
-            // No SMTP / no recipient: skip confirmation silently (except recipient hint above)
         }
 
         return BookResult.Ok(
             reminderScheduled = reminderScheduled,
             confirmationSent = confirmationSent,
-            needRecipient = needRecipient,
+            needPersonnel = false,
             needSmtp = needSmtp,
         )
     }
@@ -248,11 +267,50 @@ class HomeViewModel(
         viewModelScope.launch {
             val settings = notificationStore.load(accountId)
             val all = dao.allForAccount(accountId)
-            if (!settings.remindersOn || !ReminderScheduler.isSmtpReady(settings)) {
+            if (!settings.remindersOn || !ReminderScheduler.isSmtpConfigured(settings)) {
                 for (a in all) ReminderScheduler.cancel(appContext, a.id)
             } else {
                 ReminderScheduler.rescheduleAll(appContext, all, settings)
             }
+        }
+    }
+
+    suspend fun upsertPersonnel(
+        id: Long,
+        name: String,
+        email: String,
+        phone: String,
+    ): Boolean {
+        val accountId = session.unlockedAccountId.value ?: return false
+        val cleanName = name.trim()
+        val cleanEmail = email.trim()
+        if (cleanName.isEmpty() || cleanEmail.isEmpty()) return false
+        if (id == 0L) {
+            personnelDao.insert(
+                Personnel(
+                    accountId = accountId,
+                    name = cleanName,
+                    email = cleanEmail,
+                    phone = phone.trim(),
+                ),
+            )
+        } else {
+            val existing = personnelDao.get(accountId, id) ?: return false
+            personnelDao.update(
+                existing.copy(
+                    name = cleanName,
+                    email = cleanEmail,
+                    phone = phone.trim(),
+                ),
+            )
+        }
+        return true
+    }
+
+    fun deletePersonnel(id: Long) {
+        val accountId = session.unlockedAccountId.value ?: return
+        viewModelScope.launch {
+            personnelDao.delete(accountId, id)
         }
     }
 
@@ -292,12 +350,13 @@ class HomeViewModel(
     class Factory(
         private val app: Application,
         private val dao: AppointmentDao,
+        private val personnelDao: PersonnelDao,
         private val accountRepo: AccountRepository,
         private val session: AccountSession,
         private val notificationStore: NotificationSettingsStore,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T =
-            HomeViewModel(app, dao, accountRepo, session, notificationStore) as T
+            HomeViewModel(app, dao, personnelDao, accountRepo, session, notificationStore) as T
     }
 }

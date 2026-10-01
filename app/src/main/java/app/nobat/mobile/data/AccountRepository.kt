@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 class AccountRepository(
     private val accounts: AccountDao,
     private val appointments: AppointmentDao,
+    private val personnel: PersonnelDao,
     private val session: AccountSession,
     private val notificationStore: NotificationSettingsStore,
 ) {
@@ -107,6 +108,7 @@ class AccountRepository(
      */
     suspend fun resetAccount(accountId: Long) {
         appointments.deleteAllForAccount(accountId)
+        personnel.deleteAllForAccount(accountId)
         accounts.delete(accountId)
         notificationStore.clear(accountId)
         if (session.unlockedAccountId.value == accountId) {

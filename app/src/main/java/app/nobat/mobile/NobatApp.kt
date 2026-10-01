@@ -18,6 +18,7 @@ class NobatApp : Application() {
         AccountRepository(
             accounts = database.accounts(),
             appointments = database.appointments(),
+            personnel = database.personnel(),
             session = session,
             notificationStore = notificationStore,
         )

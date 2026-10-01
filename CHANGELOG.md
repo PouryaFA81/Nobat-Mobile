@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-01
+
+### Added
+- **Personnel / پرسنل:** Room staff rows (name, email, optional phone) under Account Management; list + add/edit; empty state prompts Add personnel
+- **Assign to** on book: pick who gets the slot; confirmation email + 1h SMTP reminder go to that person’s email (snapshot on appointment)
+- If no personnel: block mail with **Add personnel first** / **اول پرسنل اضافه کنید** and open Personnel
+
+### Changed
+- Room DB v2 → v3: `personnel` table; `appointments.personnelId` + `personnelEmail`
+- Reminder WorkManager carries recipient email from appointment (not global test recipient)
+
 ## [0.8.1] - 2026-10-01
 
 ### Changed
@@ -125,6 +136,7 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.9.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.9.0
 [0.8.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.8.1
 [0.8.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.8.0
 [0.7.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.7.0
