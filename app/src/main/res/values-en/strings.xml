@@ -7,6 +7,10 @@
     <string name="nav_calendar">Calendar</string>
     <string name="nav_add">Add</string>
     <string name="account_title">Account</string>
+    <string name="section_account_management">Account Management</string>
+    <string name="section_preferences">Preferences</string>
+    <string name="section_advanced_settings">Advanced Settings</string>
+    <string name="section_about">About</string>
     <string name="appearance">Appearance</string>
     <string name="theme">Theme</string>
     <string name="coming_soon">Coming soon</string>
