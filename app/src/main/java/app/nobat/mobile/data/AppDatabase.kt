@@ -8,13 +8,14 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Appointment::class, Account::class],
-    version = 2,
+    entities = [Appointment::class, Account::class, Personnel::class],
+    version = 3,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appointments(): AppointmentDao
     abstract fun accounts(): AccountDao
+    abstract fun personnel(): PersonnelDao
 
     companion object {
         @Volatile private var instance: AppDatabase? = null
@@ -46,6 +47,38 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v2 → v3: personnel table; appointments.personnelId + personnelEmail snapshot.
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS personnel (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        accountId INTEGER NOT NULL,
+                        name TEXT NOT NULL,
+                        email TEXT NOT NULL,
+                        phone TEXT NOT NULL,
+                        notes TEXT NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_personnel_accountId ON personnel(accountId)",
+                )
+                db.execSQL(
+                    "ALTER TABLE appointments ADD COLUMN personnelId INTEGER NOT NULL DEFAULT 0",
+                )
+                db.execSQL(
+                    "ALTER TABLE appointments ADD COLUMN personnelEmail TEXT NOT NULL DEFAULT ''",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_appointments_personnelId ON appointments(personnelId)",
+                )
+            }
+        }
+
         fun get(context: Context): AppDatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -53,7 +86,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "nobat.db",
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                     .also { instance = it }
             }

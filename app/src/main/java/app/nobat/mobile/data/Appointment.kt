@@ -6,7 +6,10 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "appointments",
-    indices = [Index(value = ["accountId"])],
+    indices = [
+        Index(value = ["accountId"]),
+        Index(value = ["personnelId"]),
+    ],
 )
 data class Appointment(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -20,4 +23,11 @@ data class Appointment(
     val initials: String,
     val note: String = "",
     val status: String = "active",
+    /** Staff who owns this slot (SMTP target). 0 = unset / legacy. */
+    val personnelId: Long = 0,
+    /**
+     * Email snapshot at book time so 1h reminders still know the target
+     * if the personnel row is later edited or deleted.
+     */
+    val personnelEmail: String = "",
 )
