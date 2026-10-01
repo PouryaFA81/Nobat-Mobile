@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Nobat Mobile</string>
+    <string name="brand_title">Nobat Mobile</string>
+    <string name="continue_cta">Continue</string>
     <string name="home_title">Calendar</string>
     <string name="nav_calendar">Calendar</string>
     <string name="nav_add">Add</string>

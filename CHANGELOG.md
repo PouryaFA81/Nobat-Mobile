@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-10-01
+
+### Added
+- Login / home entry screen: TopAppBar `brand_title` (FA نوبت موبایل · EN Nobat Mobile); Continue / ورود CTA → Month calendar (no auth yet)
+- `brand_title` + `continue_cta` string resources; launcher `app_name` stays Latin Nobat Mobile in both locales
+
+### Changed
+- Header rule: brand only on entry; Calendar / Account section bars keep section titles only
+
 ## [0.4.1] - 2026-10-01
 
 ### Fixed
@@ -62,6 +71,7 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.4.2]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.2
 [0.4.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.1
 [0.4.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.0
 [0.3.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.3.0

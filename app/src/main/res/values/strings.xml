@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Nobat Mobile</string>
+    <string name="brand_title">نوبت موبایل</string>
+    <string name="continue_cta">ورود</string>
     <string name="home_title">تقویم</string>
     <string name="nav_calendar">تقویم</string>
     <string name="nav_add">افزودن</string>

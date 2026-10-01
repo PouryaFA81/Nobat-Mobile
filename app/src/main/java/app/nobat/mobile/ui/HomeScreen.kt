@@ -84,7 +84,7 @@ import java.time.format.TextStyle as DateTextStyle
 import java.util.Locale
 import kotlinx.coroutines.launch
 
-private enum class AppScreen { Month, Day, Account }
+private enum class AppScreen { Entry, Month, Day, Account }
 
 private val LtrTextStyle: TextStyle
     @Composable get() = TextStyle(textDirection = TextDirection.Ltr)
@@ -99,7 +99,7 @@ fun HomeScreen(
     val month by vm.month.collectAsState()
     val rows by vm.appointments.collectAsState()
     val monthCounts by vm.monthCounts.collectAsState()
-    var screen by remember { mutableStateOf(AppScreen.Month) }
+    var screen by remember { mutableStateOf(AppScreen.Entry) }
     var showBook by remember { mutableStateOf(false) }
     var showLanguage by remember { mutableStateOf(false) }
     var pendingCancel by remember { mutableStateOf<Appointment?>(null) }
@@ -111,6 +111,10 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             when (screen) {
+                AppScreen.Entry -> TopAppBar(
+                    title = { Text(stringResource(R.string.brand_title)) },
+                    colors = topBarColors(),
+                )
                 AppScreen.Month -> TopAppBar(
                     title = { Text(stringResource(R.string.nav_calendar)) },
                     actions = {
@@ -180,6 +184,13 @@ fun HomeScreen(
         },
     ) { padding ->
         when (screen) {
+            AppScreen.Entry -> EntryPane(
+                onContinue = { screen = AppScreen.Month },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp),
+            )
             AppScreen.Month -> MonthCalendarPane(
                 month = month,
                 counts = monthCounts,
@@ -281,6 +292,58 @@ private fun topBarColors() = TopAppBarDefaults.topAppBarColors(
     containerColor = MaterialTheme.colorScheme.surface,
     titleContentColor = MaterialTheme.colorScheme.onSurface,
 )
+
+@Composable
+private fun EntryPane(
+    onContinue: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 28.dp, vertical = 36.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                Icon(
+                    Icons.Outlined.CalendarMonth,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(56.dp),
+                )
+                Text(
+                    text = stringResource(R.string.brand_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Button(
+                    onClick = onContinue,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.continue_cta),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun AccountPane(
