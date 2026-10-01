@@ -15,6 +15,8 @@ import app.nobat.mobile.data.Personnel
 import app.nobat.mobile.data.PersonnelDao
 import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.notify.SmtpClient
+import app.nobat.mobile.notify.TelegramClient
+import app.nobat.mobile.notify.TelegramSettingsStore
 import app.nobat.mobile.remind.ReminderScheduler
 import app.nobat.mobile.session.AccountSession
 import java.time.LocalDate
@@ -39,6 +41,7 @@ class HomeViewModel(
     private val accountRepo: AccountRepository,
     private val session: AccountSession,
     private val notificationStore: NotificationSettingsStore,
+    private val telegramStore: TelegramSettingsStore,
 ) : AndroidViewModel(app) {
     private val dayFmt = DateTimeFormatter.ISO_LOCAL_DATE
     private val appContext = app.applicationContext
@@ -246,6 +249,22 @@ class HomeViewModel(
             }
         }
 
+        // Telegram notify-on-book (Integrations chat ID; staff name in body). Skip if off/missing.
+        val tg = telegramStore.load(accountId)
+        if (tg.notifyOnBook && tg.isConfigured()) {
+            val time = "%02d:%02d".format(saved.startMinute / 60, saved.startMinute % 60)
+            val tgText = appContext.getString(
+                R.string.telegram_book_message,
+                saved.initials,
+                saved.day,
+                time,
+                saved.durationMin,
+                person.name,
+            )
+            // Fire-and-forget style: failures do not fail the book.
+            TelegramClient.sendMessage(tg.botToken, tg.chatId, tgText)
+        }
+
         return BookResult.Ok(
             reminderScheduled = reminderScheduled,
             confirmationSent = confirmationSent,
@@ -349,9 +368,10 @@ class HomeViewModel(
         private val accountRepo: AccountRepository,
         private val session: AccountSession,
         private val notificationStore: NotificationSettingsStore,
+        private val telegramStore: TelegramSettingsStore,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T =
-            HomeViewModel(app, dao, personnelDao, accountRepo, session, notificationStore) as T
+            HomeViewModel(app, dao, personnelDao, accountRepo, session, notificationStore, telegramStore) as T
     }
 }

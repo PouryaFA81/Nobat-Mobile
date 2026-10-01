@@ -133,6 +133,12 @@
     <string name="google_drive">Google Drive</string>
     <string name="google_calendar">Google Calendar</string>
     <string name="bot_token">Bot token</string>
+    <string name="chat_id">Chat ID</string>
+    <string name="notify_on_book">Notify on book</string>
+    <string name="connected">Connected</string>
+    <string name="telegram_setup_guide">Telegram setup guide</string>
+    <string name="telegram_test_body">This is a test message from Nobat Mobile.</string>
+    <string name="telegram_book_message">Appointment saved: %1$s — %2$s at %3$s (%4$d min) · Staff: %5$s</string>
     <string name="connect">Connect</string>
     <string name="data">Data</string>
     <string name="backup">Backup</string>

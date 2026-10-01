@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.11.0">v0.11.0</a></em>
+  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.12.0">v0.12.0</a></em>
 </p>
 
 ---
@@ -21,7 +21,7 @@ Small clinics, counselors, and front-desk teams who want a **simple appointment 
 
 If you already self-host the original [Nobat](https://github.com/PouryaFA81/Nobat) server, keep that for privacy-first hosting. **Nobat Mobile** is the sibling product for people who just want an app on the phone.
 
-## What’s in the app (v0.11.0)
+## What’s in the app (v0.12.0)
 
 - **Local accounts** — Several profiles on one phone; password for create/change only; unlock with PIN/fingerprint; data stays on the device  
 - **Personnel** — Staff list (name, email, phone); book **Assign to** so SMTP confirmation + 1h reminder go to that person  
@@ -36,7 +36,8 @@ If you already self-host the original [Nobat](https://github.com/PouryaFA81/Noba
 - **About** — Version, check for updates, GitHub contact links  
 - **Local Backup & Restore** — Advanced Settings → Backup: save this account’s data to Downloads; restore from a file with a confirm dialog  
 - **Reports & Print PDF** — Advanced Settings → Reports: day/month range; on-device PDF; Share / Print  
-- **Coming soon (shells)** — Integrations (Telegram, Bale, Google Drive, Google Calendar), Drive backup  
+- **Telegram** — Integrations: your bot token + chat ID; Test send; optional notify on book (staff name + appointment in message)  
+- **Coming soon (shells)** — Bale, Google Drive, Google Calendar, Drive backup  
 
 Next: Drive sync and the remaining shells.
 
@@ -64,18 +65,19 @@ In the app: **Account → Notifications → Email (SMTP)** → **SMTP setup guid
 
 ## Telegram setup
 
-Notify staff with **your** bot (token + chat ID):
+Notify staff with **your** bot (token + chat ID). Create a bot with [@BotFather](https://t.me/BotFather), get a chat ID, then paste them under Integrations.
 
 - English: **[Telegram setup guide](docs/TELEGRAM.md)**
 - فارسی: **[راهنمای راه‌اندازی تلگرام](docs/TELEGRAM.fa.md)**
 
 In the app (from **0.12.0**): **Account → Advanced Settings → Integrations → Telegram** → **Telegram setup guide**.
 
+
 ## Try it on your phone
 
 ### Option A — download the APK (recommended)
 
-1. Open [Releases → v0.11.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.11.0) (or the latest pre-release)
+1. Open [Releases → v0.12.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.12.0) (or the latest pre-release)
 2. Download the `.apk`
 3. On your phone, allow install from that source
 4. Open **Nobat Mobile**, create or unlock a local account, then use the calendar
@@ -94,7 +96,7 @@ The first sync can take a few minutes.
 
 ## Status
 
-Pre-release dogfood builds. Booking, accounts, app lock, language, SMTP reminders, and themes are in **v0.11.0**. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
+Pre-release dogfood builds. Booking, accounts, app lock, language, SMTP reminders, and themes are in **v0.12.0**. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
 
 Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
 
