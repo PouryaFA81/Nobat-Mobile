@@ -15,10 +15,8 @@ import java.util.concurrent.TimeUnit
 /**
  * Schedules email reminders with **WorkManager** (OneTimeWorkRequest + initial delay).
  *
- * Why WorkManager (not AlarmManager.setExact):
- * - Survives process death and reboot without a custom BootReceiver
- * - No SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM permission on Android 12+
- * - Reliable enough for “1 hour before” email (may run a few minutes late under Doze)
+ * Recipient is the appointment’s [Appointment.personnelEmail] snapshot (assigned staff),
+ * not a global inbox. SMTP credentials still come from per-account notification settings.
  *
  * Unique work name: `reminder_{appointmentId}` — replace on reschedule, cancel on delete.
  */
@@ -27,13 +25,19 @@ object ReminderScheduler {
 
     fun workName(appointmentId: Long) = "reminder_$appointmentId"
 
-    fun isSmtpReady(settings: NotificationSettings): Boolean =
+    /** SMTP host + from/username ready (recipient comes from personnel on the appointment). */
+    fun isSmtpConfigured(settings: NotificationSettings): Boolean =
         settings.smtpHost.isNotBlank() &&
-            settings.reminderRecipient.isNotBlank() &&
             (settings.smtpFrom.isNotBlank() || settings.smtpUsername.isNotBlank())
 
     /**
-     * Schedule or replace a reminder if [settings].remindersOn and SMTP is ready.
+     * Ready to schedule: SMTP configured and appointment has a personnel email snapshot.
+     */
+    fun canSendToPersonnel(settings: NotificationSettings, appointment: Appointment): Boolean =
+        isSmtpConfigured(settings) && appointment.personnelEmail.isNotBlank()
+
+    /**
+     * Schedule or replace a reminder if [settings].remindersOn and SMTP + personnel email ready.
      * Skips (and cancels any prior work) when the fire time is already past.
      */
     fun schedule(
@@ -42,7 +46,7 @@ object ReminderScheduler {
         settings: NotificationSettings,
     ) {
         if (appointment.id <= 0L) return
-        if (!settings.remindersOn || !isSmtpReady(settings)) {
+        if (!settings.remindersOn || !canSendToPersonnel(settings, appointment)) {
             cancel(context, appointment.id)
             return
         }
@@ -69,6 +73,7 @@ object ReminderScheduler {
             ReminderWorker.KEY_DAY to appointment.day,
             ReminderWorker.KEY_START_MINUTE to appointment.startMinute,
             ReminderWorker.KEY_DURATION_MIN to appointment.durationMin,
+            ReminderWorker.KEY_RECIPIENT_EMAIL to appointment.personnelEmail,
         )
         val request = OneTimeWorkRequestBuilder<ReminderWorker>()
             .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
