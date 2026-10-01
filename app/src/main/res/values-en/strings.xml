@@ -63,4 +63,17 @@
     <string name="orphan_migration_body">We’ll attach previous appointments on this phone to your new account.</string>
     <string name="no_accounts_hint">No accounts yet. Create one.</string>
     <string name="profiles_heading">Accounts on this phone</string>
+
+    <!-- About (Pen) -->
+    <string name="about">About</string>
+    <string name="version">Version</string>
+    <string name="check_for_updates">Check for updates</string>
+    <string name="up_to_date">You\'re up to date</string>
+    <string name="update_available">Update available</string>
+    <string name="open_release">Open release</string>
+    <string name="contact">Contact</string>
+    <string name="bug_report">Bug report</string>
+    <string name="suggestions">Suggestions</string>
+    <string name="support">Support</string>
+    <string name="update_check_failed">Could not check for updates</string>
 </resources>

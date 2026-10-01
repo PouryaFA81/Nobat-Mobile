@@ -63,4 +63,17 @@
     <string name="orphan_migration_body">نوبت‌های قبلی روی این گوشی را به حساب جدید وصل می‌کنیم.</string>
     <string name="no_accounts_hint">هنوز حسابی نیست. یکی بسازید.</string>
     <string name="profiles_heading">حساب‌های این گوشی</string>
+
+    <!-- About (Pen) -->
+    <string name="about">درباره</string>
+    <string name="version">نسخه</string>
+    <string name="check_for_updates">بررسی به‌روزرسانی</string>
+    <string name="up_to_date">به‌روز هستید</string>
+    <string name="update_available">نسخهٔ جدید موجود است</string>
+    <string name="open_release">باز کردن انتشار</string>
+    <string name="contact">تماس</string>
+    <string name="bug_report">گزارش باگ</string>
+    <string name="suggestions">پیشنهادها</string>
+    <string name="support">پشتیبانی</string>
+    <string name="update_check_failed">بررسی به‌روزرسانی ممکن نشد</string>
 </resources>
