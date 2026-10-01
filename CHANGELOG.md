@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+- Account → **Notifications** / **اعلان‌ها**: per-account SMTP settings (host, port, TLS/SSL, username, password, from) with Save + Test send
+- SMS via device intent (`ACTION_SENDTO` / `smsto:`) — Test from Notifications + Share via SMS on appointment cards (no `SEND_SMS` permission)
+- EncryptedSharedPreferences store keyed by `accountId` (password never logged); cleared on account reset
+- SMTP via Android JavaMail (`com.sun.mail:android-mail` + `android-activation`)
+
 ## [0.5.1] - 2026-10-01
 
 ### Added

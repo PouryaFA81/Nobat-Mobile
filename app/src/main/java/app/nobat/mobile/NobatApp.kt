@@ -4,16 +4,19 @@ import android.app.Application
 import app.nobat.mobile.data.AccountRepository
 import app.nobat.mobile.data.AppDatabase
 import app.nobat.mobile.locale.AppLocale
+import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.session.AccountSession
 
 class NobatApp : Application() {
     val database: AppDatabase by lazy { AppDatabase.get(this) }
     val session: AccountSession by lazy { AccountSession(this) }
+    val notificationStore: NotificationSettingsStore by lazy { NotificationSettingsStore(this) }
     val accounts: AccountRepository by lazy {
         AccountRepository(
             accounts = database.accounts(),
             appointments = database.appointments(),
             session = session,
+            notificationStore = notificationStore,
         )
     }
 

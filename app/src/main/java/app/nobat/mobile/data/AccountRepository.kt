@@ -1,5 +1,6 @@
 package app.nobat.mobile.data
 
+import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.security.PasswordHasher
 import app.nobat.mobile.session.AccountSession
 import kotlinx.coroutines.flow.Flow
@@ -8,6 +9,7 @@ class AccountRepository(
     private val accounts: AccountDao,
     private val appointments: AppointmentDao,
     private val session: AccountSession,
+    private val notificationStore: NotificationSettingsStore,
 ) {
     fun observeAccounts(): Flow<List<Account>> = accounts.observeAll()
 
@@ -106,6 +108,7 @@ class AccountRepository(
     suspend fun resetAccount(accountId: Long) {
         appointments.deleteAllForAccount(accountId)
         accounts.delete(accountId)
+        notificationStore.clear(accountId)
         if (session.unlockedAccountId.value == accountId) {
             session.lock()
         }
