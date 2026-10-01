@@ -16,8 +16,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -54,6 +56,13 @@ private const val CLINIC_SETUP_GUIDE_URL_EN =
 private const val CLINIC_SETUP_GUIDE_URL_FA =
     "https://github.com/PouryaFA81/Nobat-Mobile/blob/main/docs/CLINIC-NOTIFICATIONS.fa.md"
 
+/** Admin setup path before Connected. */
+private enum class AdminPath {
+    PICK,
+    RELAY_CODE,
+    OWN_RELAY,
+}
+
 @Composable
 fun ClinicCodePane(
     accountId: Long,
@@ -69,11 +78,16 @@ fun ClinicCodePane(
     var topic by remember { mutableStateOf("") }
     var token by remember { mutableStateOf("") }
     var connected by remember { mutableStateOf(false) }
+    var hosted by remember { mutableStateOf(false) }
     var pasteCode by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
+    var adminPath by remember { mutableStateOf(AdminPath.PICK) }
+    var purchaseUrl by remember { mutableStateOf("") }
 
     val savedMsg = stringResource(R.string.saved)
     val invalidMsg = stringResource(R.string.invalid_clinic_code)
+    val invalidOrExpiredMsg = stringResource(R.string.invalid_or_expired_code)
+    val purchaseUrlUnsetMsg = stringResource(R.string.relay_purchase_url_unset)
     val isStaff = AccountRole.isStaff(role)
 
     fun reload() {
@@ -82,6 +96,11 @@ fun ClinicCodePane(
         topic = s.topic
         token = s.token
         connected = s.connected && s.isConfigured()
+        hosted = s.hosted
+        purchaseUrl = store.getRelayPurchaseUrl()
+        if (!connected) {
+            adminPath = AdminPath.PICK
+        }
         loaded = true
     }
 
@@ -89,12 +108,13 @@ fun ClinicCodePane(
         reload()
     }
 
-    fun currentAdminSettings(connectedFlag: Boolean) = ClinicSettings(
+    fun currentAdminSettings(connectedFlag: Boolean, hostedFlag: Boolean = false) = ClinicSettings(
         baseUrl = baseUrl,
         topic = topic,
         token = token,
         connected = connectedFlag,
         lastMessageId = store.load(accountId).lastMessageId,
+        hosted = hostedFlag,
     )
 
     if (!loaded) {
@@ -121,7 +141,11 @@ fun ClinicCodePane(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = stringResource(R.string.clinic_notifications),
+                text = if (connected && hosted) {
+                    stringResource(R.string.hosted_clinic_notifications)
+                } else {
+                    stringResource(R.string.clinic_notifications)
+                },
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
             )
@@ -132,6 +156,14 @@ fun ClinicCodePane(
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
+        }
+
+        if (connected && hosted) {
+            AssistChip(
+                onClick = {},
+                enabled = false,
+                label = { Text(stringResource(R.string.hosted_chip)) },
+            )
         }
 
         Row(
@@ -184,6 +216,7 @@ fun ClinicCodePane(
                             accountId,
                             decoded.copy(
                                 connected = true,
+                                hosted = false,
                                 lastMessageId = store.load(accountId).lastMessageId,
                             ),
                         )
@@ -207,36 +240,86 @@ fun ClinicCodePane(
                 },
             )
         } else {
-            AdminClinicSection(
+            AdminClinicHub(
+                connected = connected,
+                hosted = hosted,
+                adminPath = adminPath,
+                onPath = { adminPath = it },
                 baseUrl = baseUrl,
                 topic = topic,
                 token = token,
-                connected = connected,
+                pasteCode = pasteCode,
+                purchaseUrl = purchaseUrl,
                 saving = saving,
                 onUrl = { baseUrl = it },
                 onTopic = { topic = it },
                 onToken = { token = it },
-                onSave = {
-                    if (saving) return@AdminClinicSection
+                onPasteChange = { pasteCode = it },
+                onPurchaseUrl = { purchaseUrl = it },
+                onSavePurchaseUrl = {
+                    store.setRelayPurchaseUrl(purchaseUrl)
+                    scope.launch { snackbar.showSnackbar(savedMsg) }
+                },
+                onRedeem = {
+                    if (saving) return@AdminClinicHub
                     saving = true
                     scope.launch {
-                        val s = currentAdminSettings(connectedFlag = true)
+                        val decoded = ClinicCode.decode(pasteCode, forceHosted = true)
+                        if (decoded == null || !decoded.isConfigured()) {
+                            saving = false
+                            snackbar.showSnackbar(invalidOrExpiredMsg)
+                            return@launch
+                        }
+                        store.save(
+                            accountId,
+                            decoded.copy(
+                                connected = true,
+                                hosted = true,
+                                lastMessageId = store.load(accountId).lastMessageId,
+                            ),
+                        )
+                        ClinicSubscribe.restartLive(context)
+                        reload()
+                        pasteCode = ""
+                        saving = false
+                        snackbar.showSnackbar(savedMsg)
+                    }
+                },
+                onGetRelayCode = {
+                    val url = store.getRelayPurchaseUrl().ifBlank { purchaseUrl.trim() }
+                    if (url.isBlank()) {
+                        scope.launch { snackbar.showSnackbar(purchaseUrlUnsetMsg) }
+                        return@AdminClinicHub
+                    }
+                    try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    } catch (_: Exception) {
+                        scope.launch { snackbar.showSnackbar(purchaseUrlUnsetMsg) }
+                    }
+                },
+                onSaveOwn = {
+                    if (saving) return@AdminClinicHub
+                    saving = true
+                    scope.launch {
+                        store.setRelayPurchaseUrl(purchaseUrl)
+                        val s = currentAdminSettings(connectedFlag = true, hostedFlag = false)
                         if (!s.isConfigured()) {
                             saving = false
                             snackbar.showSnackbar(invalidMsg)
                             return@launch
                         }
-                        store.save(accountId, s.copy(connected = true))
+                        store.save(accountId, s.copy(connected = true, hosted = false))
                         reload()
                         saving = false
                         snackbar.showSnackbar(savedMsg)
                     }
                 },
                 onShare = {
-                    val code = ClinicCode.encode(currentAdminSettings(true))
+                    val s = store.load(accountId)
+                    val code = ClinicCode.encode(s)
                     if (code == null) {
                         scope.launch { snackbar.showSnackbar(invalidMsg) }
-                        return@AdminClinicSection
+                        return@AdminClinicHub
                     }
                     val send = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
@@ -246,8 +329,19 @@ fun ClinicCodePane(
                         Intent.createChooser(send, context.getString(R.string.share_code)),
                     )
                 },
+                onDisconnect = {
+                    if (saving) return@AdminClinicHub
+                    saving = true
+                    scope.launch {
+                        store.clear(accountId)
+                        ClinicSubscribe.restartLive(context)
+                        reload()
+                        saving = false
+                        snackbar.showSnackbar(savedMsg)
+                    }
+                },
                 onRegenerate = {
-                    if (saving) return@AdminClinicSection
+                    if (saving || hosted) return@AdminClinicHub
                     saving = true
                     scope.launch {
                         val existing = store.load(accountId)
@@ -257,9 +351,11 @@ fun ClinicCodePane(
                             token = "",
                             connected = false,
                             lastMessageId = "",
+                            hosted = false,
                         )
                         store.save(accountId, next)
                         reload()
+                        adminPath = AdminPath.OWN_RELAY
                         saving = false
                         snackbar.showSnackbar(savedMsg)
                     }
@@ -318,22 +414,40 @@ private fun StaffClinicSection(
 }
 
 @Composable
-private fun AdminClinicSection(
+private fun AdminClinicHub(
+    connected: Boolean,
+    hosted: Boolean,
+    adminPath: AdminPath,
+    onPath: (AdminPath) -> Unit,
     baseUrl: String,
     topic: String,
     token: String,
-    connected: Boolean,
+    pasteCode: String,
+    purchaseUrl: String,
     saving: Boolean,
     onUrl: (String) -> Unit,
     onTopic: (String) -> Unit,
     onToken: (String) -> Unit,
-    onSave: () -> Unit,
+    onPasteChange: (String) -> Unit,
+    onPurchaseUrl: (String) -> Unit,
+    onSavePurchaseUrl: () -> Unit,
+    onRedeem: () -> Unit,
+    onGetRelayCode: () -> Unit,
+    onSaveOwn: () -> Unit,
     onShare: () -> Unit,
+    onDisconnect: () -> Unit,
     onRegenerate: () -> Unit,
 ) {
-    val code = remember(baseUrl, topic, token) {
-        ClinicCode.encode(
-            ClinicSettings(baseUrl = baseUrl, topic = topic, token = token, connected = true),
+    val code = remember(baseUrl, topic, token, connected, hosted) {
+        if (!connected) null
+        else ClinicCode.encode(
+            ClinicSettings(
+                baseUrl = baseUrl,
+                topic = topic,
+                token = token,
+                connected = true,
+                hosted = hosted,
+            ),
         )
     }
 
@@ -361,20 +475,184 @@ private fun AdminClinicSection(
         ) {
             Text(stringResource(R.string.share_code))
         }
+        if (!hosted) {
+            OutlinedButton(
+                onClick = onRegenerate,
+                enabled = !saving,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            ) {
+                Text(stringResource(R.string.regenerate))
+            }
+        }
         OutlinedButton(
-            onClick = onRegenerate,
+            onClick = onDisconnect,
             enabled = !saving,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
         ) {
-            Text(stringResource(R.string.regenerate))
+            Text(stringResource(R.string.disconnect))
         }
-        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        // Hosted path: never show real host / topic / token.
+        if (!hosted) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            OwnRelayFields(
+                baseUrl = baseUrl,
+                topic = topic,
+                token = token,
+                purchaseUrl = purchaseUrl,
+                saving = saving,
+                onUrl = onUrl,
+                onTopic = onTopic,
+                onToken = onToken,
+                onPurchaseUrl = onPurchaseUrl,
+                onSavePurchaseUrl = onSavePurchaseUrl,
+                onSave = onSaveOwn,
+            )
+        }
+        return
     }
 
+    // Not connected — path picker / dual setup
+    when (adminPath) {
+        AdminPath.PICK -> {
+            Text(
+                text = stringResource(R.string.choose_clinic_path),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+                onClick = { onPath(AdminPath.RELAY_CODE) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            ) {
+                Text(stringResource(R.string.relay_code))
+            }
+            OutlinedButton(
+                onClick = { onPath(AdminPath.OWN_RELAY) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            ) {
+                Text(stringResource(R.string.your_own_relay))
+            }
+        }
+        AdminPath.RELAY_CODE -> {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = true,
+                    onClick = {},
+                    label = { Text(stringResource(R.string.relay_code)) },
+                )
+                FilterChip(
+                    selected = false,
+                    onClick = { onPath(AdminPath.OWN_RELAY) },
+                    label = { Text(stringResource(R.string.your_own_relay)) },
+                )
+            }
+            Text(
+                text = stringResource(R.string.i_have_a_code),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedTextField(
+                value = pasteCode,
+                onValueChange = onPasteChange,
+                label = { Text(stringResource(R.string.relay_code)) },
+                singleLine = false,
+                minLines = 2,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !saving,
+            )
+            Button(
+                onClick = onRedeem,
+                enabled = !saving && pasteCode.isNotBlank(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            ) {
+                Text(stringResource(R.string.redeem))
+            }
+            OutlinedButton(
+                onClick = onGetRelayCode,
+                enabled = !saving,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            ) {
+                Text(stringResource(R.string.get_a_relay_code))
+            }
+            OutlinedButton(
+                onClick = { onPath(AdminPath.PICK) },
+                enabled = !saving,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.back))
+            }
+        }
+        AdminPath.OWN_RELAY -> {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = false,
+                    onClick = { onPath(AdminPath.RELAY_CODE) },
+                    label = { Text(stringResource(R.string.relay_code)) },
+                )
+                FilterChip(
+                    selected = true,
+                    onClick = {},
+                    label = { Text(stringResource(R.string.your_own_relay)) },
+                )
+            }
+            OwnRelayFields(
+                baseUrl = baseUrl,
+                topic = topic,
+                token = token,
+                purchaseUrl = purchaseUrl,
+                saving = saving,
+                onUrl = onUrl,
+                onTopic = onTopic,
+                onToken = onToken,
+                onPurchaseUrl = onPurchaseUrl,
+                onSavePurchaseUrl = onSavePurchaseUrl,
+                onSave = onSaveOwn,
+            )
+            OutlinedButton(
+                onClick = { onPath(AdminPath.PICK) },
+                enabled = !saving,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.back))
+            }
+        }
+    }
+}
+
+@Composable
+private fun OwnRelayFields(
+    baseUrl: String,
+    topic: String,
+    token: String,
+    purchaseUrl: String,
+    saving: Boolean,
+    onUrl: (String) -> Unit,
+    onTopic: (String) -> Unit,
+    onToken: (String) -> Unit,
+    onPurchaseUrl: (String) -> Unit,
+    onSavePurchaseUrl: () -> Unit,
+    onSave: () -> Unit,
+) {
     Text(
-        text = stringResource(R.string.relay),
+        text = stringResource(R.string.your_own_relay),
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -410,6 +688,31 @@ private fun AdminClinicSection(
     Button(
         onClick = onSave,
         enabled = !saving && baseUrl.isNotBlank() && topic.isNotBlank() && token.isNotBlank(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+    ) {
+        Text(stringResource(R.string.save_and_create_clinic_code))
+    }
+    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+    Text(
+        text = stringResource(R.string.relay_advanced),
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    OutlinedTextField(
+        value = purchaseUrl,
+        onValueChange = onPurchaseUrl,
+        label = { Text(stringResource(R.string.relay_purchase_url)) },
+        placeholder = { Text("https://example.com/relay") },
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+        modifier = Modifier.fillMaxWidth(),
+        enabled = !saving,
+    )
+    OutlinedButton(
+        onClick = onSavePurchaseUrl,
+        enabled = !saving,
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp),

@@ -252,5 +252,19 @@
     <string name="relay_topic">موضوع</string>
     <string name="relay_token">توکن</string>
 
-</resources>
+    <!-- Clinic dual path (v0.15.1) -->
+    <string name="your_own_relay">رلهٔ خودتان</string>
+    <string name="relay_code">کد رله</string>
+    <string name="get_a_relay_code">دریافت کد رله</string>
+    <string name="i_have_a_code">کد دارم</string>
+    <string name="redeem">فعال‌سازی</string>
+    <string name="invalid_or_expired_code">کد نامعتبر یا منقضی</string>
+    <string name="hosted_clinic_notifications">اعلان‌های مطب میزبانی‌شده</string>
+    <string name="hosted_chip">میزبانی‌شده</string>
+    <string name="choose_clinic_path">نحوهٔ اتصال را انتخاب کنید</string>
+    <string name="save_and_create_clinic_code">ذخیره و ساخت کد مطب</string>
+    <string name="relay_advanced">رله — پیشرفته</string>
+    <string name="relay_purchase_url">آدرس خرید / تماس</string>
+    <string name="relay_purchase_url_unset">ابتدا در رلهٔ خودتان → رله — پیشرفته یک آدرس خرید تنظیم کنید</string>
 
+</resources>
