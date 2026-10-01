@@ -138,6 +138,12 @@ object ClinicSubscribe {
                         msg.day,
                         msg.time,
                     )
+                    "move" -> ClinicNotifier.notifyMoved(
+                        context,
+                        msg.initials.ifBlank { msg.title },
+                        msg.day,
+                        msg.time,
+                    )
                 }
             }
             if (lastId != current.lastMessageId && lastId.isNotBlank()) {

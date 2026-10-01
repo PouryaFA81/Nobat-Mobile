@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-01
+
+### Added
+- **Move / Reschedule** / **جابه‌جایی / تغییر زمان** from day view (Admin / Secretary only — same role gate as FAB book)
+- Change date and/or time; Assign to and notes stay prefilled (editable)
+- Notify on move: SMTP confirmation-style to assigned personnel email; Telegram when **Notify on book** is on; local in-app notification; Clinic relay publish with `event=move` + `personnelId`
+- Cancel old 1h reminder WorkManager work; schedule new reminder for the new slot when reminders/SMTP ready
+
+### Changed
+- versionName **0.15.0**, versionCode **20**
+
 ## [0.14.0] - 2026-10-01
 
 ### Added

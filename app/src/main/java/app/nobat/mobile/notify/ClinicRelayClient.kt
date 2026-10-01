@@ -59,7 +59,14 @@ object ClinicRelayClient {
                 setRequestProperty("Authorization", "Bearer ${settings.token.trim()}")
                 // Human-friendly title for stock ntfy clients; app parses body JSON.
                 setRequestProperty("Title", title.take(120))
-                setRequestProperty("Tags", if (event == "cancel") "x" else "calendar")
+                setRequestProperty(
+                    "Tags",
+                    when (event) {
+                        "cancel" -> "x"
+                        "move" -> "arrows_counterclockwise"
+                        else -> "calendar"
+                    },
+                )
             }
             try {
                 conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
@@ -83,7 +90,7 @@ object ClinicRelayClient {
 
     /**
      * One-shot poll for messages since [sinceId] (ntfy message id).
-     * Returns parsed app messages (event book/cancel) newest-last.
+     * Returns parsed app messages (event book/cancel/move) newest-last.
      */
     suspend fun poll(
         settings: ClinicSettings,
@@ -208,7 +215,7 @@ object ClinicRelayClient {
             }
             if (payload.optInt("v", 0) != 1) return null
             val event = payload.optString("event", "")
-            if (event != "book" && event != "cancel") return null
+            if (event != "book" && event != "cancel" && event != "move") return null
             RelayMessage(
                 id = id,
                 event = event,

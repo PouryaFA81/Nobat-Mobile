@@ -399,6 +399,148 @@ class HomeViewModel(
         }
     }
 
+
+    sealed class MoveResult {
+        data class Ok(
+            val reminderScheduled: Boolean,
+            val confirmationSent: Boolean?,
+            val needSmtp: Boolean,
+        ) : MoveResult()
+        data object Failed : MoveResult()
+        data object NeedPersonnel : MoveResult()
+    }
+
+    /**
+     * Move / reschedule an appointment: new day and/or time; keep assign/notes
+     * (editable). Admin/Secretary only. Cancels old 1h reminder and schedules a new one.
+     * Notifies like book: SMTP confirmation-style, Telegram if Notify on book, local
+     * in-app, clinic relay event=move.
+     */
+    suspend fun move(
+        id: Long,
+        newDay: LocalDate,
+        startMinute: Int,
+        durationMin: Int,
+        note: String,
+        personnelId: Long,
+        sendConfirmation: Boolean = true,
+    ): MoveResult {
+        val accountId = session.unlockedAccountId.value ?: return MoveResult.Failed
+        val account = accountRepo.getAccount(accountId) ?: return MoveResult.Failed
+        if (!AccountRole.isAdmin(account.role)) return MoveResult.Failed
+
+        val existing = dao.get(accountId, id) ?: return MoveResult.Failed
+        val staffList = personnelDao.listForAccount(accountId)
+        if (staffList.isEmpty()) return MoveResult.NeedPersonnel
+
+        val person = staffList.firstOrNull { it.id == personnelId }
+            ?: return MoveResult.Failed
+        val email = person.email.trim()
+        if (email.isEmpty()) return MoveResult.Failed
+
+        val updated = existing.copy(
+            day = newDay.format(dayFmt),
+            startMinute = startMinute.coerceIn(0, 23 * 60 + 59),
+            durationMin = durationMin.coerceAtLeast(15),
+            note = note.trim(),
+            personnelId = person.id,
+            personnelEmail = email,
+        )
+        dao.upsert(updated)
+        val settings = notificationStore.load(accountId)
+
+        // Replace WorkManager reminder for the new slot.
+        ReminderScheduler.cancel(appContext, id)
+        var reminderScheduled = false
+        var confirmationSent: Boolean? = null
+        var needSmtp = false
+
+        if (settings.remindersOn) {
+            if (ReminderScheduler.canSendToPersonnel(settings, updated)) {
+                ReminderScheduler.schedule(appContext, updated, settings)
+                reminderScheduled = true
+            } else if (!ReminderScheduler.isSmtpConfigured(settings)) {
+                needSmtp = true
+            }
+        }
+
+        if (sendConfirmation) {
+            if (ReminderScheduler.canSendToPersonnel(settings, updated)) {
+                val time = "%02d:%02d".format(updated.startMinute / 60, updated.startMinute % 60)
+                val subject = appContext.getString(
+                    R.string.move_email_subject,
+                    updated.initials,
+                )
+                val body = appContext.getString(
+                    R.string.move_email_body,
+                    updated.initials,
+                    updated.day,
+                    time,
+                    updated.durationMin,
+                )
+                val result = SmtpClient.send(
+                    SmtpClient.MailRequest(
+                        host = settings.smtpHost,
+                        port = settings.smtpPort,
+                        useTls = settings.smtpUseTls,
+                        username = settings.smtpUsername,
+                        password = settings.smtpPassword,
+                        from = settings.smtpFrom,
+                        to = email,
+                        subject = subject,
+                        body = body,
+                    ),
+                )
+                confirmationSent = result.isSuccess
+            } else if (!ReminderScheduler.isSmtpConfigured(settings) && settings.smtpHost.isNotBlank()) {
+                needSmtp = true
+            }
+        }
+
+        // Reuse Telegram "Notify on book" toggle for move as well.
+        val tg = telegramStore.load(accountId)
+        if (tg.notifyOnBook && tg.isConfigured()) {
+            val time = "%02d:%02d".format(updated.startMinute / 60, updated.startMinute % 60)
+            val tgText = appContext.getString(
+                R.string.telegram_move_message,
+                updated.initials,
+                updated.day,
+                time,
+                updated.durationMin,
+                person.name,
+            )
+            TelegramClient.sendMessage(tg.botToken, tg.chatId, tgText)
+        }
+
+        val time = "%02d:%02d".format(updated.startMinute / 60, updated.startMinute % 60)
+        ClinicNotifier.notifyMoved(appContext, updated.initials, updated.day, time)
+
+        val clinic = clinicStore.load(accountId)
+        if (clinic.isConfigured()) {
+            val title = appContext.getString(R.string.notif_appointment_moved)
+            ClinicRelayClient.publish(
+                settings = clinic,
+                event = "move",
+                personnelId = person.id,
+                initials = updated.initials,
+                day = updated.day,
+                time = time,
+                title = title,
+            )
+        }
+
+        // Jump day view to the new date when it changed.
+        if (updated.day != existing.day) {
+            selectDay(newDay)
+        }
+
+        return MoveResult.Ok(
+            reminderScheduled = reminderScheduled,
+            confirmationSent = confirmationSent,
+            needSmtp = needSmtp,
+        )
+    }
+
     /** After saving notification settings: reschedule or cancel all reminders for this account. */
     fun syncRemindersForAccount(accountId: Long) {
         viewModelScope.launch {

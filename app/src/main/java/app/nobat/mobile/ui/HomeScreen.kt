@@ -2,6 +2,7 @@ package app.nobat.mobile.ui
 
 import app.nobat.mobile.security.LockAfterOption
 import android.os.Build
+import android.app.DatePickerDialog
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -222,9 +223,11 @@ fun HomeScreen(
     var showLanguage by remember { mutableStateOf(false) }
     var showChangePassword by remember { mutableStateOf(false) }
     var pendingCancel by remember { mutableStateOf<Appointment?>(null) }
+    var pendingMove by remember { mutableStateOf<Appointment?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val bookedMsg = stringResource(R.string.booked_toast)
+    val movedMsg = stringResource(R.string.moved_toast)
     val reminderScheduledMsg = stringResource(R.string.reminder_scheduled)
     val confirmationSentMsg = stringResource(R.string.confirmation_sent)
     val confirmationFailedMsg = stringResource(R.string.confirmation_failed)
@@ -638,6 +641,8 @@ fun HomeScreen(
                             items(rows, key = { it.id }) { a ->
                                 AppointmentCard(
                                     a = a,
+                                    canMove = canBook,
+                                    onMove = { pendingMove = a },
                                     onCancel = { pendingCancel = a },
                                     onSms = {
                                         val time = formatTime(a.startMinute)
@@ -906,6 +911,50 @@ fun HomeScreen(
                 }
             },
         )
+    }
+
+    pendingMove?.let { appt ->
+        if (canBook) {
+            MoveDialog(
+                appointment = appt,
+                personnel = personnel,
+                onDismiss = { pendingMove = null },
+                onSave = { newDay, start, duration, note, personnelId ->
+                    scope.launch {
+                        val result = vm.move(
+                            id = appt.id,
+                            newDay = newDay,
+                            startMinute = start,
+                            durationMin = duration,
+                            note = note,
+                            personnelId = personnelId,
+                        )
+                        pendingMove = null
+                        when (result) {
+                            is HomeViewModel.MoveResult.Ok -> {
+                                snackbar.showSnackbar(movedMsg)
+                                if (result.reminderScheduled) {
+                                    snackbar.showSnackbar(reminderScheduledMsg)
+                                }
+                                when (result.confirmationSent) {
+                                    true -> snackbar.showSnackbar(confirmationSentMsg)
+                                    false -> snackbar.showSnackbar(confirmationFailedMsg)
+                                    null -> {}
+                                }
+                                if (result.needSmtp) {
+                                    snackbar.showSnackbar(setupSmtpMsg)
+                                }
+                            }
+                            HomeViewModel.MoveResult.NeedPersonnel -> {
+                                snackbar.showSnackbar(addPersonnelFirstMsg)
+                                screen = AppScreen.Personnel
+                            }
+                            HomeViewModel.MoveResult.Failed -> {}
+                        }
+                    }
+                },
+            )
+        }
     }
 
 }
@@ -1995,6 +2044,8 @@ private fun DayBar(
 @Composable
 private fun AppointmentCard(
     a: Appointment,
+    canMove: Boolean,
+    onMove: () -> Unit,
     onCancel: () -> Unit,
     onSms: () -> Unit,
 ) {
@@ -2039,6 +2090,11 @@ private fun AppointmentCard(
                     )
                     Spacer(Modifier.size(6.dp))
                     Text(stringResource(R.string.sms_share))
+                }
+                if (canMove) {
+                    OutlinedButton(onClick = onMove) {
+                        Text(stringResource(R.string.move_appointment))
+                    }
                 }
                 OutlinedButton(onClick = onCancel) {
                     Text(stringResource(R.string.cancel_appointment))
@@ -2166,6 +2222,167 @@ private fun BookDialog(
                     onSave(initials, hour * 60 + minute, duration, note, selectedPersonnelId)
                 },
                 enabled = initials.isNotBlank() && selectedPersonnelId > 0L,
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}
+
+
+@Composable
+private fun MoveDialog(
+    appointment: Appointment,
+    personnel: List<Personnel>,
+    onDismiss: () -> Unit,
+    onSave: (newDay: LocalDate, startMinute: Int, durationMin: Int, note: String, personnelId: Long) -> Unit,
+) {
+    val context = LocalContext.current
+    val initialDay = remember(appointment.id) {
+        try {
+            LocalDate.parse(appointment.day)
+        } catch (_: Exception) {
+            LocalDate.now()
+        }
+    }
+    var selectedDay by remember(appointment.id) { mutableStateOf(initialDay) }
+    var hour by remember(appointment.id) { mutableIntStateOf(appointment.startMinute / 60) }
+    var minute by remember(appointment.id) { mutableIntStateOf(appointment.startMinute % 60) }
+    var duration by remember(appointment.id) { mutableIntStateOf(appointment.durationMin.coerceAtLeast(15)) }
+    var note by remember(appointment.id) { mutableStateOf(appointment.note) }
+    var selectedPersonnelId by remember(appointment.id) {
+        mutableStateOf(
+            if (personnel.any { it.id == appointment.personnelId }) {
+                appointment.personnelId
+            } else {
+                personnel.firstOrNull()?.id ?: 0L
+            },
+        )
+    }
+    val ltrFieldStyle = MaterialTheme.typography.bodyLarge.merge(LtrTextStyle)
+    val dayLabel = remember(selectedDay) {
+        selectedDay.format(DateTimeFormatter.ISO_LOCAL_DATE)
+    }
+
+    fun openDayPicker() {
+        val d = selectedDay
+        DatePickerDialog(
+            context,
+            { _, y, m, day -> selectedDay = LocalDate.of(y, m + 1, day) },
+            d.year,
+            d.monthValue - 1,
+            d.dayOfMonth,
+        ).show()
+    }
+
+    if (personnel.isEmpty()) {
+        LaunchedEffect(Unit) { onDismiss() }
+        return
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.move_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = appointment.initials,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = stringResource(R.string.new_date),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedButton(
+                    onClick = { openDayPicker() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "$dayLabel · ${stringResource(R.string.pick_new_date)}",
+                        style = MaterialTheme.typography.bodyLarge.merge(LtrTextStyle),
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.new_time),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = hour.toString(),
+                        onValueChange = { v -> v.toIntOrNull()?.let { hour = it.coerceIn(0, 23) } },
+                        label = { Text(stringResource(R.string.hour)) },
+                        singleLine = true,
+                        textStyle = ltrFieldStyle,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = "%02d".format(minute),
+                        onValueChange = { v -> v.toIntOrNull()?.let { minute = it.coerceIn(0, 59) } },
+                        label = { Text(stringResource(R.string.minute)) },
+                        singleLine = true,
+                        textStyle = ltrFieldStyle,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                OutlinedTextField(
+                    value = duration.toString(),
+                    onValueChange = { v -> v.toIntOrNull()?.let { duration = it.coerceIn(15, 480) } },
+                    label = { Text(stringResource(R.string.duration)) },
+                    singleLine = true,
+                    textStyle = ltrFieldStyle,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text(stringResource(R.string.note)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    text = stringResource(R.string.assign_to),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    personnel.forEach { person ->
+                        val selected = person.id == selectedPersonnelId
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedPersonnelId = person.id }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            androidx.compose.material3.RadioButton(
+                                selected = selected,
+                                onClick = { selectedPersonnelId = person.id },
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(person.name, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    text = person.email,
+                                    style = MaterialTheme.typography.bodySmall.merge(LtrTextStyle),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onSave(selectedDay, hour * 60 + minute, duration, note, selectedPersonnelId)
+                },
+                enabled = selectedPersonnelId > 0L,
             ) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {
