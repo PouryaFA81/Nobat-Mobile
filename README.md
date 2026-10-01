@@ -6,11 +6,11 @@
 
 <p align="center">
   <strong>Clinic appointments on your phone — no server required.</strong><br>
-  Book sessions · remind colleagues · email or SMS from your own apps
+  Local accounts · calendar · SMTP reminders · FA / EN
 </p>
 
 <p align="center">
-  <em><a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.2.0">v0.2.0</a> — book &amp; cancel on your phone</em>
+  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.7.0">v0.7.0</a></em>
 </p>
 
 ---
@@ -21,14 +21,18 @@ Small clinics, counselors, and front-desk teams who want a **simple appointment 
 
 If you already self-host the original [Nobat](https://github.com/PouryaFA81/Nobat) server, keep that for privacy-first hosting. **Nobat Mobile** is the sibling product for people who just want an app on the phone.
 
-## What you can do (v0.2.0)
+## What’s in the app (v0.7.0)
 
-- **Calendar & day view** — see who’s booked and when  
-- **Book, move, cancel** — client initials + time (+ optional note)  
-- **Works offline** — data stays on the device  
-- **Reminders (next)** — email (SMTP) or your **SMS app**  
+- **Local accounts** — Several profiles on one phone, each with a password; data stays on the device  
+- **Calendar** — Month grid → day list; book, cancel, empty-day CTA  
+- **Jalali in Persian** — FA uses the solar calendar (week starts شنبه); English stays Gregorian  
+- **Language** — فارسی (RTL) / English (LTR), including chrome and strings  
+- **Theme** — Dark (default) or Light  
+- **Email (SMTP)** — Save your mailbox, test send, confirmation on book, reminder **1 hour before**  
+- **SMS** — Opens your phone’s SMS app with a prefilled message (you tap Send)  
+- **About** — Version, check for updates, GitHub contact links  
 
-Later releases can grow toward staff roles, wait lists, and more — without turning the first version into a server.
+Coming next (**0.8.0+**): app lock (PIN / fingerprint), plus Integrations / backup / reports shells (Telegram, Bale, Google Drive & Calendar — marked Coming soon until wired).
 
 ## Nobat vs Nobat Mobile
 
@@ -36,29 +40,32 @@ Later releases can grow toward staff roles, wait lists, and more — without tur
 |---|---|---|
 | Where it runs | Your own server + browser/PWA | Android phone |
 | Best for | Privacy-first self-hosting | Everyday use without IT |
-| Notifications | Self-hosted ntfy | Email / SMS (your apps) |
+| Data | Server + browser | On-device (Room), per local account |
+| Notifications | Self-hosted options | Your SMTP + device SMS |
 | Install | Docker + domain | APK / Play (when ready) |
 
 Same idea — appointments for a small practice. Different home.
 
-## Status
+## Email (SMTP) setup
 
-**v0.2.0** pre-release is out: charcoal icon + book/cancel on a day list.  
-Download: [v0.2.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.2.0)
+Reminders use **your** mailbox. Step-by-step for Gmail, Outlook, Yahoo, and custom hosts:
 
-Open the project in **Android Studio** if you prefer building from source.
+- English: **[SMTP setup guide](docs/SMTP.md)**
+- فارسی: **[راهنمای راه‌اندازی SMTP](docs/SMTP.fa.md)**
 
-Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
+In the app: **Account → Notifications → Email (SMTP)** → **SMTP setup guide**.
 
 ## Try it on your phone
 
 ### Option A — download the APK (recommended)
-1. Open [Releases → v0.2.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.2.0)
+
+1. Open [Releases → v0.7.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.7.0) (or the latest pre-release)
 2. Download the `.apk`
 3. On your phone, allow install from that source
-4. Open **Nobat Mobile** and try **+** to book, then cancel if needed
+4. Open **Nobat Mobile**, create or unlock a local account, then use the calendar
 
 ### Option B — run from a computer
+
 You need a computer and a USB cable.
 
 1. Install [Android Studio](https://developer.android.com/studio) (free).
@@ -69,16 +76,11 @@ You need a computer and a USB cable.
 
 The first sync can take a few minutes.
 
-**Note:** Email/SMS reminders are not in 0.2.0 yet.
+## Status
 
-## Email (SMTP) setup
+Pre-release dogfood builds. Core booking, accounts, language, SMTP reminders, and themes are in **v0.7.0**. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
 
-Reminders use **your** mailbox. Step-by-step for Gmail, Outlook, Yahoo, and custom hosts:
-
-- English: **[SMTP setup guide](docs/SMTP.md)**
-- فارسی: **[راهنمای راه‌اندازی SMTP](docs/SMTP.fa.md)**
-
-In the app (from **0.6.0**): **Account → Notifications → Email (SMTP)** → **SMTP setup guide**.
+Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
 
 ## License
 
