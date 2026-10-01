@@ -96,7 +96,20 @@ import app.nobat.mobile.locale.AppLocale
 import app.nobat.mobile.calendar.Jalali
 import app.nobat.mobile.ui.theme.ThemePrefs
 import app.nobat.mobile.notify.SmsIntent
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.IntegrationInstructions
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.Security
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.nobat.mobile.ui.account.NotificationsPane
+import app.nobat.mobile.ui.security.SecurityPane
+import app.nobat.mobile.ui.security.UnlockGatePane
+import app.nobat.mobile.ui.shell.BackupPane
+import app.nobat.mobile.ui.shell.IntegrationsPane
+import app.nobat.mobile.ui.shell.ReportsPane
 import app.nobat.mobile.update.UpdateChecker
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -111,12 +124,35 @@ private enum class AppScreen {
     Entry,
     SignIn,
     CreateAccount,
+    Unlock,
     Month,
     Day,
     Account,
     Notifications,
     About,
+    Security,
+    Integrations,
+    Backup,
+    Reports,
 }
+
+private fun AppScreen.isSensitive(): Boolean = this in setOf(
+    AppScreen.Month,
+    AppScreen.Day,
+    AppScreen.Account,
+    AppScreen.Notifications,
+    AppScreen.About,
+    AppScreen.Security,
+    AppScreen.Integrations,
+    AppScreen.Backup,
+    AppScreen.Reports,
+)
+
+private fun AppScreen.isAuthFlow(): Boolean = this in setOf(
+    AppScreen.Entry,
+    AppScreen.SignIn,
+    AppScreen.CreateAccount,
+)
 
 private val LtrTextStyle: TextStyle
     @Composable get() = TextStyle(textDirection = TextDirection.Ltr)
@@ -144,8 +180,11 @@ fun HomeScreen(
     val unlockedAccount by vm.unlockedAccount.collectAsState()
     val needsOrphanMigration by vm.needsOrphanMigration.collectAsState()
     val bootReady by vm.bootReady.collectAsState()
+    val appLock = app.appLock
+    val appLockUnlocked by appLock.unlocked.collectAsState()
 
     var screen by remember { mutableStateOf(AppScreen.Entry) }
+    var postUnlockScreen by remember { mutableStateOf(AppScreen.Month) }
     var signInTarget by remember { mutableStateOf<Account?>(null) }
     var createAttachOrphans by remember { mutableStateOf(false) }
     var showBook by remember { mutableStateOf(false) }
@@ -185,12 +224,46 @@ fun HomeScreen(
         }
     }
 
-    // If session locks (switch), return to Entry.
+    // If account session locks (switch), return to Entry.
     LaunchedEffect(unlockedId) {
-        if (unlockedId == null && screen in listOf(AppScreen.Month, AppScreen.Day, AppScreen.Account, AppScreen.Notifications, AppScreen.About)) {
+        if (unlockedId == null && (screen.isSensitive() || screen == AppScreen.Unlock)) {
             screen = AppScreen.Entry
             signInTarget = null
         }
+    }
+
+    // Background → require app-lock unlock again when enabled.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP && appLock.isLockEnabled()) {
+                appLock.lockSession()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Gate sensitive UI when app lock is on and session is not unlocked.
+    LaunchedEffect(unlockedId, appLockUnlocked, screen) {
+        if (unlockedId == null) return@LaunchedEffect
+        if (!appLock.isLockEnabled()) return@LaunchedEffect
+        if (appLockUnlocked) return@LaunchedEffect
+        if (screen.isSensitive()) {
+            postUnlockScreen = screen
+            screen = AppScreen.Unlock
+        }
+    }
+
+    fun goAfterAccountAuth() {
+        if (appLock.requiresUnlock()) {
+            postUnlockScreen = AppScreen.Month
+            screen = AppScreen.Unlock
+        } else {
+            if (appLock.isLockEnabled()) appLock.markUnlocked()
+            screen = AppScreen.Month
+        }
+        signInTarget = null
     }
 
     Scaffold(
@@ -297,6 +370,58 @@ fun HomeScreen(
                     },
                     colors = topBarColors(),
                 )
+                AppScreen.Unlock -> TopAppBar(
+                    title = { Text(stringResource(R.string.unlock)) },
+                    colors = topBarColors(),
+                )
+                AppScreen.Security -> TopAppBar(
+                    title = { Text(stringResource(R.string.security)) },
+                    navigationIcon = {
+                        IconButton(onClick = { screen = AppScreen.Account }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
+                    },
+                    colors = topBarColors(),
+                )
+                AppScreen.Integrations -> TopAppBar(
+                    title = { Text(stringResource(R.string.integrations)) },
+                    navigationIcon = {
+                        IconButton(onClick = { screen = AppScreen.Account }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
+                    },
+                    colors = topBarColors(),
+                )
+                AppScreen.Backup -> TopAppBar(
+                    title = { Text(stringResource(R.string.backup)) },
+                    navigationIcon = {
+                        IconButton(onClick = { screen = AppScreen.Account }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
+                    },
+                    colors = topBarColors(),
+                )
+                AppScreen.Reports -> TopAppBar(
+                    title = { Text(stringResource(R.string.reports_print)) },
+                    navigationIcon = {
+                        IconButton(onClick = { screen = AppScreen.Account }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
+                    },
+                    colors = topBarColors(),
+                )
             }
         },
         snackbarHost = { SnackbarHost(snackbar) },
@@ -356,10 +481,7 @@ fun HomeScreen(
                         account = target,
                         onSignIn = { password ->
                             val ok = vm.signIn(target.id, password)
-                            if (ok) {
-                                screen = AppScreen.Month
-                                signInTarget = null
-                            }
+                            if (ok) goAfterAccountAuth()
                             ok
                         },
                         onForgotReset = { pendingReset = target },
@@ -380,7 +502,7 @@ fun HomeScreen(
                     )
                     if (ok) {
                         createAttachOrphans = false
-                        screen = AppScreen.Month
+                        goAfterAccountAuth()
                     }
                     ok
                 },
@@ -462,6 +584,10 @@ fun HomeScreen(
                 onLanguage = { showLanguage = true },
                 onTheme = { showTheme = true },
                 onNotifications = { screen = AppScreen.Notifications },
+                onSecurity = { screen = AppScreen.Security },
+                onIntegrations = { screen = AppScreen.Integrations },
+                onBackup = { screen = AppScreen.Backup },
+                onReports = { screen = AppScreen.Reports },
                 onAbout = { screen = AppScreen.About },
                 modifier = Modifier
                     .fillMaxSize()
@@ -484,6 +610,44 @@ fun HomeScreen(
                 }
             }
             AppScreen.About -> AboutPane(
+                snackbar = snackbar,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            )
+            AppScreen.Unlock -> UnlockGatePane(
+                store = appLock,
+                onUnlocked = {
+                    screen = if (postUnlockScreen.isSensitive()) postUnlockScreen else AppScreen.Month
+                },
+                onUseAccount = {
+                    vm.switchAccount()
+                    screen = AppScreen.Entry
+                },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            )
+            AppScreen.Security -> SecurityPane(
+                store = appLock,
+                snackbar = snackbar,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            )
+            AppScreen.Integrations -> IntegrationsPane(
+                snackbar = snackbar,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            )
+            AppScreen.Backup -> BackupPane(
+                snackbar = snackbar,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            )
+            AppScreen.Reports -> ReportsPane(
                 snackbar = snackbar,
                 modifier = Modifier
                     .fillMaxSize()
@@ -991,6 +1155,10 @@ private fun AccountPane(
     onLanguage: () -> Unit,
     onTheme: () -> Unit,
     onNotifications: () -> Unit,
+    onSecurity: () -> Unit,
+    onIntegrations: () -> Unit,
+    onBackup: () -> Unit,
+    onReports: () -> Unit,
     onAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1058,6 +1226,34 @@ private fun AccountPane(
             title = stringResource(R.string.notifications_title),
             subtitle = null,
             onClick = onNotifications,
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Security, contentDescription = null) },
+            title = stringResource(R.string.security),
+            subtitle = stringResource(R.string.app_lock),
+            onClick = onSecurity,
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.IntegrationInstructions, contentDescription = null) },
+            title = stringResource(R.string.integrations),
+            subtitle = stringResource(R.string.coming_soon),
+            onClick = onIntegrations,
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Cloud, contentDescription = null) },
+            title = stringResource(R.string.backup),
+            subtitle = stringResource(R.string.coming_soon),
+            onClick = onBackup,
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Print, contentDescription = null) },
+            title = stringResource(R.string.reports_print),
+            subtitle = stringResource(R.string.coming_soon),
+            onClick = onReports,
         )
         HorizontalDivider()
         AccountRow(
