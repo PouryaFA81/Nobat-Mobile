@@ -77,12 +77,12 @@ In the app (from **0.12.0**): **Account → Advanced Settings → Integrations �
 
 ## Clinic notifications (multi-phone)
 
-Staff get **in-app** alerts via a **Clinic code** (your existing ntfy host + a **new topic** — friend’s Nobat topics untouched):
+Staff get **in-app** alerts via a **Clinic code** (your relay host + a dedicated topic):
 
 - English: **[Clinic notifications setup](docs/CLINIC-NOTIFICATIONS.md)**
 - فارسی: **[اعلان‌های مطب](docs/CLINIC-NOTIFICATIONS.fa.md)**
 
-In the app (from **0.14.0**): **Clinic code** under Advanced Settings. The UI never says “ntfy.”
+In the app (from **0.14.0**): **Clinic code** under Advanced Settings. The UI never names the relay product.
 
 ## Try it on your phone
 
