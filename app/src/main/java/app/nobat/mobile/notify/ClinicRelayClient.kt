@@ -64,6 +64,7 @@ object ClinicRelayClient {
                     when (event) {
                         "cancel" -> "x"
                         "move" -> "arrows_counterclockwise"
+                        "digest" -> "clipboard"
                         else -> "calendar"
                     },
                 )
@@ -90,7 +91,7 @@ object ClinicRelayClient {
 
     /**
      * One-shot poll for messages since [sinceId] (ntfy message id).
-     * Returns parsed app messages (event book/cancel/move) newest-last.
+     * Returns parsed app messages (event book/cancel/move/digest) newest-last.
      */
     suspend fun poll(
         settings: ClinicSettings,
@@ -215,7 +216,7 @@ object ClinicRelayClient {
             }
             if (payload.optInt("v", 0) != 1) return null
             val event = payload.optString("event", "")
-            if (event != "book" && event != "cancel" && event != "move") return null
+            if (event != "book" && event != "cancel" && event != "move" && event != "digest") return null
             RelayMessage(
                 id = id,
                 event = event,

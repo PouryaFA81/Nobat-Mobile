@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-01
+
+### Added
+- **Evening digest** / **خلاصهٔ شامگاهی** under Preferences → Notifications (next to Reminders)
+- Toggle **Send evening digest** / **ارسال خلاصهٔ شامگاهی** + **Digest time** / **زمان خلاصه** (default 20:00)
+- WorkManager daily job: tomorrow’s appointments; one SMTP email per personnel with slots; Telegram when **Notify on book** is on; Clinic relay `event=digest`; local in-app notification
+- Empty tomorrow → local/Telegram use **No appointments tomorrow** / **فردا نوبتی نیست**
+
+### Changed
+- versionName **0.16.0**, versionCode **22**
+
 ## [0.15.1] - 2026-10-01
 
 ### Added
@@ -227,6 +238,12 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.16.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.16.0
+[0.15.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.15.1
+[0.15.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.15.0
+[0.14.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.14.0
+[0.13.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.13.0
+[0.12.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.12.0
 [0.11.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.11.0
 [0.10.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.10.0
 [0.9.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.9.0

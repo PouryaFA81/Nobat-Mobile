@@ -11,6 +11,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.nobat.mobile.NobatApp
+import app.nobat.mobile.digest.EveningDigestScheduler
 import app.nobat.mobile.data.AccountRole
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -144,6 +145,10 @@ object ClinicSubscribe {
                         msg.day,
                         msg.time,
                     )
+                    "digest" -> {
+                        val count = msg.initials.toIntOrNull() ?: 0
+                        ClinicNotifier.notifyDigest(context, msg.day, count)
+                    }
                 }
             }
             if (lastId != current.lastMessageId && lastId.isNotBlank()) {
@@ -188,5 +193,13 @@ class ClinicBootReceiver : BroadcastReceiver() {
         }
         ClinicSubscribe.ensureScheduled(context)
         ClinicSubscribe.startLive(context)
+        val pending = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                EveningDigestScheduler.ensureAll(context)
+            } finally {
+                pending.finish()
+            }
+        }
     }
 }

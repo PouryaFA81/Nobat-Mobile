@@ -43,7 +43,9 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import app.nobat.mobile.R
 import app.nobat.mobile.locale.AppLocale
+import app.nobat.mobile.digest.EveningDigestScheduler
 import app.nobat.mobile.notify.NotificationSettings
+import app.nobat.mobile.remind.ReminderScheduler
 import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.notify.SmsIntent
 import app.nobat.mobile.notify.SmtpClient
@@ -66,6 +68,8 @@ fun NotificationsPane(
     val scope = rememberCoroutineScope()
     var loaded by remember { mutableStateOf(false) }
     var remindersOn by remember { mutableStateOf(false) }
+    var eveningDigestOn by remember { mutableStateOf(false) }
+    var digestTime by remember { mutableStateOf("20:00") }
     var host by remember { mutableStateOf("") }
     var port by remember { mutableStateOf("587") }
     var useTls by remember { mutableStateOf(true) }
@@ -83,10 +87,13 @@ fun NotificationsPane(
     val testSubject = stringResource(R.string.smtp_test_subject)
     val testBody = stringResource(R.string.smtp_test_body)
     val minutesSuffix = stringResource(R.string.minutes_suffix)
+    val digestNeedsSmtpMsg = stringResource(R.string.digest_needs_smtp)
 
     LaunchedEffect(accountId) {
         val s = store.load(accountId)
         remindersOn = s.remindersOn
+        eveningDigestOn = s.eveningDigestOn
+        digestTime = s.digestTime
         host = s.smtpHost
         port = s.smtpPort.toString()
         useTls = s.smtpUseTls
@@ -99,6 +106,8 @@ fun NotificationsPane(
 
     fun currentSettings(): NotificationSettings = NotificationSettings(
         remindersOn = remindersOn,
+        eveningDigestOn = eveningDigestOn,
+        digestTime = digestTime,
         smtpHost = host,
         smtpPort = port.toIntOrNull() ?: 587,
         smtpUseTls = useTls,
@@ -140,6 +149,46 @@ fun NotificationsPane(
         }
         Text(
             text = stringResource(R.string.remind_1h_before),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        HorizontalDivider()
+
+        Text(
+            text = stringResource(R.string.evening_digest),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = stringResource(R.string.evening_digest_on),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(checked = eveningDigestOn, onCheckedChange = { eveningDigestOn = it })
+        }
+        OutlinedTextField(
+            value = digestTime,
+            onValueChange = { v ->
+                // Allow HH:mm while typing (digits + one colon).
+                if (v.length <= 5 && v.all { it.isDigit() || it == ':' }) {
+                    digestTime = v
+                }
+            },
+            label = { Text(stringResource(R.string.digest_time)) },
+            singleLine = true,
+            enabled = eveningDigestOn,
+            textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("20:00") },
+        )
+        Text(
+            text = stringResource(R.string.digest_via_email),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -257,10 +306,16 @@ fun NotificationsPane(
                 if (saving) return@Button
                 saving = true
                 scope.launch {
-                    store.save(accountId, currentSettings())
+                    val s = currentSettings()
+                    store.save(accountId, s)
+                    EveningDigestScheduler.schedule(context, accountId, s)
                     onSettingsSaved()
                     saving = false
-                    snackbar.showSnackbar(savedMsg)
+                    if (s.eveningDigestOn && !ReminderScheduler.isSmtpConfigured(s)) {
+                        snackbar.showSnackbar(digestNeedsSmtpMsg)
+                    } else {
+                        snackbar.showSnackbar(savedMsg)
+                    }
                 }
             },
             enabled = !saving && !testing,

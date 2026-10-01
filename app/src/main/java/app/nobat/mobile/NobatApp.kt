@@ -6,7 +6,12 @@ import app.nobat.mobile.data.AppDatabase
 import app.nobat.mobile.locale.AppLocale
 import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.notify.ClinicSettingsStore
+import app.nobat.mobile.digest.EveningDigestScheduler
 import app.nobat.mobile.notify.ClinicSubscribe
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import app.nobat.mobile.notify.TelegramSettingsStore
 import app.nobat.mobile.security.AppLockStore
 import app.nobat.mobile.session.AccountSession
@@ -28,10 +33,13 @@ class NobatApp : Application() {
         )
     }
 
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onCreate() {
         super.onCreate()
         AppLocale.applyFromPrefs(this)
         ThemePrefs.init(this)
         ClinicSubscribe.startLive(this)
+        appScope.launch { EveningDigestScheduler.ensureAll(this@NobatApp) }
     }
 }
