@@ -76,4 +76,29 @@
     <string name="suggestions">پیشنهادها</string>
     <string name="support">پشتیبانی</string>
     <string name="update_check_failed">بررسی به‌روزرسانی ممکن نشد</string>
+
+    <!-- Notifications (Pen) -->
+    <string name="notifications_title">اعلان‌ها</string>
+    <string name="email_smtp">ایمیل (SMTP)</string>
+    <string name="smtp_setup_guide">راهنمای راه‌اندازی SMTP</string>
+    <string name="smtp_host">میزبان</string>
+    <string name="smtp_port">درگاه</string>
+    <string name="smtp_username">نام کاربری</string>
+    <string name="smtp_password">رمز</string>
+    <string name="smtp_from">فرستنده</string>
+    <string name="smtp_use_tls">استفاده از TLS</string>
+    <string name="test_send">ارسال آزمایشی</string>
+    <string name="test_recipient">گیرندهٔ آزمایشی</string>
+    <string name="sms_section">پیامک</string>
+    <string name="sms_send_via_device">ارسال با گوشی</string>
+    <string name="reminders_on">یادآوری فعال</string>
+    <string name="notifications_save">ذخیره</string>
+    <string name="saved">ذخیره شد</string>
+    <string name="send_failed">ارسال ناموفق</string>
+    <string name="send_ok">ارسال شد</string>
+    <string name="sms_intent_hint">بدون مجوز پیامک — در اپ پیامک گوشی تأیید می‌کنید</string>
+    <string name="sms_reminder_sample">یادآوری نوبت: {initials} — {date} ساعت {time} ({duration})</string>
+    <string name="sms_share">پیامک</string>
+    <string name="smtp_test_subject">Nobat Mobile — تست SMTP</string>
+    <string name="smtp_test_body">این یک ایمیل آزمایشی از نوبت موبایل است.</string>
 </resources>

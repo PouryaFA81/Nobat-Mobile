@@ -36,6 +36,8 @@ import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Sms
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -91,6 +93,8 @@ import app.nobat.mobile.R
 import app.nobat.mobile.data.Account
 import app.nobat.mobile.data.Appointment
 import app.nobat.mobile.locale.AppLocale
+import app.nobat.mobile.notify.SmsIntent
+import app.nobat.mobile.ui.account.NotificationsPane
 import app.nobat.mobile.update.UpdateChecker
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -108,6 +112,7 @@ private enum class AppScreen {
     Month,
     Day,
     Account,
+    Notifications,
     About,
 }
 
@@ -164,7 +169,7 @@ fun HomeScreen(
 
     // If session locks (switch), return to Entry.
     LaunchedEffect(unlockedId) {
-        if (unlockedId == null && screen in listOf(AppScreen.Month, AppScreen.Day, AppScreen.Account, AppScreen.About)) {
+        if (unlockedId == null && screen in listOf(AppScreen.Month, AppScreen.Day, AppScreen.Account, AppScreen.Notifications, AppScreen.About)) {
             screen = AppScreen.Entry
             signInTarget = null
         }
@@ -242,6 +247,18 @@ fun HomeScreen(
                     title = { Text(stringResource(R.string.account_title)) },
                     navigationIcon = {
                         IconButton(onClick = { screen = AppScreen.Month }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
+                    },
+                    colors = topBarColors(),
+                )
+                AppScreen.Notifications -> TopAppBar(
+                    title = { Text(stringResource(R.string.notifications_title)) },
+                    navigationIcon = {
+                        IconButton(onClick = { screen = AppScreen.Account }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.back),
@@ -391,7 +408,22 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         items(rows, key = { it.id }) { a ->
-                            AppointmentCard(a) { pendingCancel = a }
+                            AppointmentCard(
+                                a = a,
+                                onCancel = { pendingCancel = a },
+                                onSms = {
+                                    val time = formatTime(a.startMinute)
+                                    val body = SmsIntent.reminderBody(
+                                        initials = a.initials,
+                                        date = day.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                                        time = time,
+                                        durationMin = a.durationMin,
+                                        minutesSuffix = context.getString(R.string.minutes_suffix),
+                                        template = context.getString(R.string.sms_reminder_sample),
+                                    )
+                                    SmsIntent.openComposer(context, body)
+                                },
+                            )
                         }
                     }
                 }
@@ -409,11 +441,27 @@ fun HomeScreen(
                     screen = AppScreen.CreateAccount
                 },
                 onLanguage = { showLanguage = true },
+                onNotifications = { screen = AppScreen.Notifications },
                 onAbout = { screen = AppScreen.About },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
             )
+            AppScreen.Notifications -> {
+                val aid = unlockedId
+                if (aid == null) {
+                    LaunchedEffect(Unit) { screen = AppScreen.Entry }
+                } else {
+                    NotificationsPane(
+                        accountId = aid,
+                        store = app.notificationStore,
+                        snackbar = snackbar,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding),
+                    )
+                }
+            }
             AppScreen.About -> AboutPane(
                 snackbar = snackbar,
                 modifier = Modifier
@@ -889,6 +937,7 @@ private fun AccountPane(
     onSwitch: () -> Unit,
     onAddAccount: () -> Unit,
     onLanguage: () -> Unit,
+    onNotifications: () -> Unit,
     onAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -951,6 +1000,13 @@ private fun AccountPane(
             onClick = {
                 Toast.makeText(context, soon, Toast.LENGTH_SHORT).show()
             },
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Notifications, contentDescription = null) },
+            title = stringResource(R.string.notifications_title),
+            subtitle = null,
+            onClick = onNotifications,
         )
         HorizontalDivider()
         AccountRow(
@@ -1375,7 +1431,11 @@ private fun DayBar(
 }
 
 @Composable
-private fun AppointmentCard(a: Appointment, onCancel: () -> Unit) {
+private fun AppointmentCard(
+    a: Appointment,
+    onCancel: () -> Unit,
+    onSms: () -> Unit,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -1408,8 +1468,19 @@ private fun AppointmentCard(a: Appointment, onCancel: () -> Unit) {
                     )
                 }
             }
-            OutlinedButton(onClick = onCancel) {
-                Text(stringResource(R.string.cancel_appointment))
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onSms) {
+                    Icon(
+                        Icons.Outlined.Sms,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.size(6.dp))
+                    Text(stringResource(R.string.sms_share))
+                }
+                OutlinedButton(onClick = onCancel) {
+                    Text(stringResource(R.string.cancel_appointment))
+                }
             }
         }
     }

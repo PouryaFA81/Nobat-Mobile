@@ -76,4 +76,29 @@
     <string name="suggestions">Suggestions</string>
     <string name="support">Support</string>
     <string name="update_check_failed">Could not check for updates</string>
+
+    <!-- Notifications (Pen) -->
+    <string name="notifications_title">Notifications</string>
+    <string name="email_smtp">Email (SMTP)</string>
+    <string name="smtp_setup_guide">SMTP setup guide</string>
+    <string name="smtp_host">Host</string>
+    <string name="smtp_port">Port</string>
+    <string name="smtp_username">Username</string>
+    <string name="smtp_password">Password</string>
+    <string name="smtp_from">From</string>
+    <string name="smtp_use_tls">Use TLS</string>
+    <string name="test_send">Test send</string>
+    <string name="test_recipient">Test recipient</string>
+    <string name="sms_section">SMS</string>
+    <string name="sms_send_via_device">Send via device</string>
+    <string name="reminders_on">Reminders on</string>
+    <string name="notifications_save">Save</string>
+    <string name="saved">Saved</string>
+    <string name="send_failed">Send failed</string>
+    <string name="send_ok">Sent</string>
+    <string name="sms_intent_hint">No SMS permission — you confirm in your phone’s messaging app</string>
+    <string name="sms_reminder_sample">Appointment reminder: {initials} — {date} at {time} ({duration})</string>
+    <string name="sms_share">SMS</string>
+    <string name="smtp_test_subject">Nobat Mobile — SMTP test</string>
+    <string name="smtp_test_body">This is a test email from Nobat Mobile.</string>
 </resources>
