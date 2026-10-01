@@ -101,4 +101,22 @@
     <string name="sms_share">پیامک</string>
     <string name="smtp_test_subject">Nobat Mobile — تست SMTP</string>
     <string name="smtp_test_body">این یک ایمیل آزمایشی از نوبت موبایل است.</string>
+
+    <!-- Reminders / theme (Pen) -->
+    <string name="remind_1h_before">۱ ساعت قبل یادآوری</string>
+    <string name="send_confirmation_now">همین حالا تأیید بفرست</string>
+    <string name="reminder_scheduled">یادآوری زمان‌بندی شد</string>
+    <string name="confirmation_sent">تأیید ارسال شد</string>
+    <string name="confirmation_failed">تأیید ارسال نشد</string>
+    <string name="setup_smtp_first">اول SMTP را تنظیم کنید</string>
+    <string name="set_recipient">گیرنده را تنظیم کنید</string>
+    <string name="theme_dark">تیره</string>
+    <string name="theme_light">روشن</string>
+    <string name="calendar_jalali">شمسی</string>
+    <string name="calendar_gregorian">میلادی</string>
+    <string name="reminder_recipient">گیرندهٔ یادآوری</string>
+    <string name="reminder_email_subject">یادآوری نوبت: %1$s</string>
+    <string name="reminder_email_body">یادآوری نوبت: %1$s — %2$s ساعت %3$s (%4$d دقیقه)</string>
+    <string name="confirmation_email_subject">تأیید نوبت: %1$s</string>
+    <string name="confirmation_email_body">نوبت ثبت شد: %1$s — %2$s ساعت %3$s (%4$d دقیقه)</string>
 </resources>
