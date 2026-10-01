@@ -9,7 +9,7 @@ import androidx.core.app.NotificationManagerCompat
 import app.nobat.mobile.R
 
 /**
- * In-app NotificationCompat for book, cancel, and move (local + clinic relay).
+ * In-app NotificationCompat for book, cancel, move, and evening digest (local + clinic relay).
  */
 object ClinicNotifier {
     const val CHANNEL_ID = "clinic_notifications"
@@ -62,6 +62,22 @@ object ClinicNotifier {
         val title = context.getString(R.string.notif_appointment_moved)
         val body = "$initials — $day $time"
         post(context, id = System.currentTimeMillis().toInt(), title = title, body = body)
+    }
+
+
+    fun notifyDigest(
+        context: Context,
+        day: String,
+        count: Int,
+    ) {
+        ensureChannel(context)
+        val title = context.getString(R.string.evening_digest)
+        val body = if (count <= 0) {
+            context.getString(R.string.digest_empty)
+        } else {
+            context.getString(R.string.digest_header, day) + " · $count"
+        }
+        post(context, id = ("digest_$day").hashCode(), title = title, body = body)
     }
 
     private fun post(context: Context, id: Int, title: String, body: String) {

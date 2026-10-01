@@ -105,6 +105,19 @@
 
     <!-- Reminders / theme (Pen) -->
     <string name="remind_1h_before">Remind 1 hour before</string>
+
+    <!-- Evening digest (Pen) -->
+    <string name="evening_digest">Evening digest</string>
+    <string name="evening_digest_on">Send evening digest</string>
+    <string name="digest_time">Digest time</string>
+    <string name="digest_via_email">Email (SMTP)</string>
+    <string name="digest_empty">No appointments tomorrow</string>
+    <string name="digest_subject">Tomorrow’s schedule — %1$s</string>
+    <string name="digest_header">Appointments for %1$s</string>
+    <string name="digest_line">%1$s · %2$s (%3$d min)</string>
+    <string name="digest_sent">Digest sent</string>
+    <string name="digest_needs_smtp">Set up SMTP first</string>
+
     <string name="send_confirmation_now">Send confirmation now</string>
     <string name="reminder_scheduled">Reminder scheduled</string>
     <string name="confirmation_sent">Confirmation sent</string>

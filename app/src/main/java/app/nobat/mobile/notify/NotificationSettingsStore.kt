@@ -16,6 +16,9 @@ class NotificationSettingsStore(context: Context) {
         val p = prefix(accountId)
         return NotificationSettings(
             remindersOn = prefs.getBoolean(p + KEY_REMINDERS_ON, false),
+            eveningDigestOn = prefs.getBoolean(p + KEY_EVENING_DIGEST_ON, false),
+            digestTime = prefs.getString(p + KEY_DIGEST_TIME, NotificationSettings.DEFAULT_DIGEST_TIME)
+                ?: NotificationSettings.DEFAULT_DIGEST_TIME,
             smtpHost = prefs.getString(p + KEY_HOST, "") ?: "",
             smtpPort = prefs.getInt(p + KEY_PORT, 587),
             smtpUseTls = prefs.getBoolean(p + KEY_TLS, true),
@@ -28,8 +31,12 @@ class NotificationSettingsStore(context: Context) {
 
     fun save(accountId: Long, settings: NotificationSettings) {
         val p = prefix(accountId)
+        val (h, m) = NotificationSettings.parseDigestTime(settings.digestTime)
+        val normalizedTime = NotificationSettings.formatDigestTime(h, m)
         prefs.edit()
             .putBoolean(p + KEY_REMINDERS_ON, settings.remindersOn)
+            .putBoolean(p + KEY_EVENING_DIGEST_ON, settings.eveningDigestOn)
+            .putString(p + KEY_DIGEST_TIME, normalizedTime)
             .putString(p + KEY_HOST, settings.smtpHost.trim())
             .putInt(p + KEY_PORT, settings.smtpPort.coerceIn(1, 65535))
             .putBoolean(p + KEY_TLS, settings.smtpUseTls)
@@ -45,6 +52,8 @@ class NotificationSettingsStore(context: Context) {
         val p = prefix(accountId)
         prefs.edit()
             .remove(p + KEY_REMINDERS_ON)
+            .remove(p + KEY_EVENING_DIGEST_ON)
+            .remove(p + KEY_DIGEST_TIME)
             .remove(p + KEY_HOST)
             .remove(p + KEY_PORT)
             .remove(p + KEY_TLS)
@@ -60,6 +69,8 @@ class NotificationSettingsStore(context: Context) {
     companion object {
         private const val PREFS_NAME = "nobat_notify_enc"
         private const val KEY_REMINDERS_ON = "reminders_on"
+        private const val KEY_EVENING_DIGEST_ON = "evening_digest_on"
+        private const val KEY_DIGEST_TIME = "digest_time"
         private const val KEY_HOST = "smtp_host"
         private const val KEY_PORT = "smtp_port"
         private const val KEY_TLS = "smtp_tls"
