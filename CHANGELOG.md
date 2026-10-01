@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+- **SMTP reminders (real):** when Reminders on + valid SMTP, schedules email **1 hour before** start via WorkManager (`OneTimeWorkRequest` + unique work `reminder_{id}`); reschedule/cancel on book/save settings/cancel; confirmation email to reminder recipient on book
+- **Jalali calendar (FA):** month grid + day header use Shamsi; week starts Saturday (شنبه); EN keeps Gregorian Saturday-first layout
+- **Appearance Dark / Light:** Account → Appearance; app-wide SharedPreferences; light surfaces + brand orange `#E95420`; wires `NobatTheme(darkTheme=…)`
+
+### Changed
+- Notifications: “test recipient” labeled as reminder recipient; Reminders switch enables scheduling (no “coming soon”)
+- Removed Appearance/Theme “coming soon” stubs
+
 ## [0.6.0] - 2026-10-01
 
 ### Added

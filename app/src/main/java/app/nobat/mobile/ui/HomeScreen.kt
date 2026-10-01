@@ -2,7 +2,6 @@ package app.nobat.mobile.ui
 
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +28,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
@@ -93,6 +93,8 @@ import app.nobat.mobile.R
 import app.nobat.mobile.data.Account
 import app.nobat.mobile.data.Appointment
 import app.nobat.mobile.locale.AppLocale
+import app.nobat.mobile.calendar.Jalali
+import app.nobat.mobile.ui.theme.ThemePrefs
 import app.nobat.mobile.notify.SmsIntent
 import app.nobat.mobile.ui.account.NotificationsPane
 import app.nobat.mobile.update.UpdateChecker
@@ -125,14 +127,16 @@ fun HomeScreen(
     app: NobatApp,
     vm: HomeViewModel = viewModel(
         factory = HomeViewModel.Factory(
+            app = app,
             dao = app.database.appointments(),
             accountRepo = app.accounts,
             session = app.session,
+            notificationStore = app.notificationStore,
         ),
     ),
 ) {
     val day by vm.day.collectAsState()
-    val month by vm.month.collectAsState()
+    val monthAnchor by vm.monthAnchor.collectAsState()
     val rows by vm.appointments.collectAsState()
     val monthCounts by vm.monthCounts.collectAsState()
     val accounts by vm.accounts.collectAsState()
@@ -152,8 +156,22 @@ fun HomeScreen(
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val bookedMsg = stringResource(R.string.booked_toast)
+    val reminderScheduledMsg = stringResource(R.string.reminder_scheduled)
+    val confirmationSentMsg = stringResource(R.string.confirmation_sent)
+    val confirmationFailedMsg = stringResource(R.string.confirmation_failed)
+    val setupSmtpMsg = stringResource(R.string.setup_smtp_first)
+    val setRecipientMsg = stringResource(R.string.set_recipient)
+    var showTheme by remember { mutableStateOf(false) }
     val passwordChangedMsg = stringResource(R.string.password_changed)
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        vm.setUseJalali(AppLocale.isPersian(context))
+    }
+    val config = androidx.compose.ui.platform.LocalConfiguration.current
+    LaunchedEffect(config) {
+        vm.setUseJalali(AppLocale.isPersian(context))
+    }
 
     // Cold start: always Entry (or Create when orphan migration / empty).
     LaunchedEffect(bootReady, needsOrphanMigration, accounts) {
@@ -372,7 +390,8 @@ fun HomeScreen(
                     .padding(horizontal = 24.dp),
             )
             AppScreen.Month -> MonthCalendarPane(
-                month = month,
+                monthAnchor = monthAnchor,
+                useJalali = AppLocale.isPersian(context),
                 counts = monthCounts,
                 selected = day,
                 onPrev = vm::prevMonth,
@@ -441,6 +460,7 @@ fun HomeScreen(
                     screen = AppScreen.CreateAccount
                 },
                 onLanguage = { showLanguage = true },
+                onTheme = { showTheme = true },
                 onNotifications = { screen = AppScreen.Notifications },
                 onAbout = { screen = AppScreen.About },
                 modifier = Modifier
@@ -456,6 +476,7 @@ fun HomeScreen(
                         accountId = aid,
                         store = app.notificationStore,
                         snackbar = snackbar,
+                        onSettingsSaved = { vm.syncRemindersForAccount(aid) },
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(padding),
@@ -475,9 +496,40 @@ fun HomeScreen(
         BookDialog(
             onDismiss = { showBook = false },
             onSave = { initials, start, duration, note ->
-                vm.book(initials, start, duration, note)
-                showBook = false
-                scope.launch { snackbar.showSnackbar(bookedMsg) }
+                scope.launch {
+                    val result = vm.book(initials, start, duration, note)
+                    showBook = false
+                    when (result) {
+                        is HomeViewModel.BookResult.Ok -> {
+                            snackbar.showSnackbar(bookedMsg)
+                            if (result.reminderScheduled) {
+                                snackbar.showSnackbar(reminderScheduledMsg)
+                            }
+                            when (result.confirmationSent) {
+                                true -> snackbar.showSnackbar(confirmationSentMsg)
+                                false -> snackbar.showSnackbar(confirmationFailedMsg)
+                                null -> {}
+                            }
+                            if (result.needSmtp) {
+                                snackbar.showSnackbar(setupSmtpMsg)
+                            } else if (result.needRecipient) {
+                                snackbar.showSnackbar(setRecipientMsg)
+                            }
+                        }
+                        HomeViewModel.BookResult.Failed -> {}
+                    }
+                }
+            },
+        )
+    }
+
+    if (showTheme) {
+        ThemeDialog(
+            dark = ThemePrefs.isDark(context),
+            onDismiss = { showTheme = false },
+            onSelect = { dark ->
+                ThemePrefs.setDark(context, dark)
+                showTheme = false
             },
         )
     }
@@ -937,12 +989,13 @@ private fun AccountPane(
     onSwitch: () -> Unit,
     onAddAccount: () -> Unit,
     onLanguage: () -> Unit,
+    onTheme: () -> Unit,
     onNotifications: () -> Unit,
     onAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val soon = stringResource(R.string.coming_soon)
+    val dark = ThemePrefs.isDark(context)
     Column(modifier = modifier.padding(vertical = 8.dp)) {
         if (!displayName.isNullOrBlank()) {
             Text(
@@ -985,21 +1038,19 @@ private fun AccountPane(
         )
         HorizontalDivider()
         AccountRow(
-            icon = { Icon(Icons.Outlined.Palette, contentDescription = null) },
+            icon = {
+                Icon(
+                    if (dark) Icons.Outlined.DarkMode else Icons.Outlined.LightMode,
+                    contentDescription = null,
+                )
+            },
             title = stringResource(R.string.appearance),
-            subtitle = soon,
-            onClick = {
-                Toast.makeText(context, soon, Toast.LENGTH_SHORT).show()
+            subtitle = if (dark) {
+                stringResource(R.string.theme_dark)
+            } else {
+                stringResource(R.string.theme_light)
             },
-        )
-        HorizontalDivider()
-        AccountRow(
-            icon = { Icon(Icons.Outlined.DarkMode, contentDescription = null) },
-            title = stringResource(R.string.theme),
-            subtitle = soon,
-            onClick = {
-                Toast.makeText(context, soon, Toast.LENGTH_SHORT).show()
-            },
+            onClick = onTheme,
         )
         HorizontalDivider()
         AccountRow(
@@ -1150,7 +1201,8 @@ private fun AccountRow(
 
 @Composable
 private fun MonthCalendarPane(
-    month: YearMonth,
+    monthAnchor: LocalDate,
+    useJalali: Boolean,
     counts: Map<String, Int>,
     selected: LocalDate,
     onPrev: () -> Unit,
@@ -1160,9 +1212,17 @@ private fun MonthCalendarPane(
     modifier: Modifier = Modifier,
 ) {
     val today = LocalDate.now()
-    val label = month.format(DateTimeFormatter.ofPattern("yyyy-MM", Locale.US))
-    val cells = remember(month) { monthGrid(month) }
-    val weekDays = remember {
+    val label = if (useJalali) {
+        Jalali.monthLabel(monthAnchor)
+    } else {
+        YearMonth.from(monthAnchor).format(DateTimeFormatter.ofPattern("yyyy-MM", Locale.US))
+    }
+    val cells = remember(monthAnchor, useJalali) {
+        if (useJalali) Jalali.monthGrid(monthAnchor) else monthGridGregorian(YearMonth.from(monthAnchor))
+    }
+    val weekHeaders: List<String> = if (useJalali) {
+        Jalali.WEEK_HEADER_FA
+    } else {
         listOf(
             DayOfWeek.SATURDAY,
             DayOfWeek.SUNDAY,
@@ -1171,7 +1231,7 @@ private fun MonthCalendarPane(
             DayOfWeek.WEDNESDAY,
             DayOfWeek.THURSDAY,
             DayOfWeek.FRIDAY,
-        )
+        ).map { it.getDisplayName(DateTextStyle.NARROW, Locale.getDefault()) }
     }
 
     Column(modifier = modifier) {
@@ -1202,9 +1262,9 @@ private fun MonthCalendarPane(
         }
         Spacer(Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth()) {
-            weekDays.forEach { dow ->
+            weekHeaders.forEach { header ->
                 Text(
-                    text = dow.getDisplayName(DateTextStyle.NARROW, Locale.getDefault()),
+                    text = header,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelMedium,
@@ -1228,6 +1288,11 @@ private fun MonthCalendarPane(
                             val count = counts[iso] ?: 0
                             val isToday = date == today
                             val isSelected = date == selected
+                            val dayNum = if (useJalali) {
+                                Jalali.dayOfMonth(date).toString()
+                            } else {
+                                date.dayOfMonth.toString()
+                            }
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -1245,7 +1310,7 @@ private fun MonthCalendarPane(
                                 verticalArrangement = Arrangement.Center,
                             ) {
                                 Text(
-                                    text = date.dayOfMonth.toString(),
+                                    text = dayNum,
                                     style = MaterialTheme.typography.bodyMedium.merge(LtrTextStyle),
                                     fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
                                     color = if (isSelected) {
@@ -1279,23 +1344,46 @@ private fun MonthCalendarPane(
     }
 }
 
-/** Gregorian month grid, Saturday-first (matches PWA week start). */
-private fun monthGrid(month: YearMonth): List<LocalDate?> {
+/** Gregorian month grid, Saturday-first (existing EN week layout). */
+private fun monthGridGregorian(month: YearMonth): List<LocalDate?> {
     val first = month.atDay(1)
-    val lead = when (first.dayOfWeek) {
-        DayOfWeek.SATURDAY -> 0
-        DayOfWeek.SUNDAY -> 1
-        DayOfWeek.MONDAY -> 2
-        DayOfWeek.TUESDAY -> 3
-        DayOfWeek.WEDNESDAY -> 4
-        DayOfWeek.THURSDAY -> 5
-        DayOfWeek.FRIDAY -> 6
-    }
+    val lead = Jalali.saturdayFirstIndex(first.dayOfWeek)
     val days = month.lengthOfMonth()
     val cells = MutableList<LocalDate?>(lead) { null }
     for (d in 1..days) cells.add(month.atDay(d))
     while (cells.size % 7 != 0) cells.add(null)
     return cells
+}
+
+@Composable
+private fun ThemeDialog(
+    dark: Boolean,
+    onDismiss: () -> Unit,
+    onSelect: (Boolean) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.appearance)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                LanguageOption(
+                    label = stringResource(R.string.theme_dark),
+                    selected = dark,
+                    onClick = { onSelect(true) },
+                )
+                LanguageOption(
+                    label = stringResource(R.string.theme_light),
+                    selected = !dark,
+                    onClick = { onSelect(false) },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }
 
 @Composable
@@ -1402,7 +1490,9 @@ private fun DayBar(
     onNext: () -> Unit,
     onToday: () -> Unit,
 ) {
-    val label = day.format(DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US))
+    val context = LocalContext.current
+    val useJalali = AppLocale.isPersian(context)
+    val label = if (useJalali) Jalali.dayLabel(day) else day.format(DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US))
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
