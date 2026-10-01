@@ -41,6 +41,11 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += setOf(
+                "META-INF/NOTICE.md",
+                "META-INF/LICENSE.md",
+                "META-INF/DEPENDENCIES",
+            )
         }
     }
 }
@@ -66,4 +71,12 @@ dependencies {
     ksp("androidx.room:room-compiler:2.6.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+
+    // SMTP: Android JavaMail (Eclipse Angus / Oracle android-mail fork)
+    implementation("com.sun.mail:android-mail:1.6.7")
+    implementation("com.sun.mail:android-activation:1.6.7")
+
+    // Encrypted prefs for per-account SMTP password
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }
+
