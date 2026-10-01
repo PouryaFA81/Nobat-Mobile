@@ -40,7 +40,7 @@ class NotificationSettingsStore(context: Context) {
             .apply()
     }
 
-    /** Remove all keys for an account (e.g. after reset/delete). */
+    /** Remove all keys for an account (e.g. when clearing local prefs). */
     fun clear(accountId: Long) {
         val p = prefix(accountId)
         prefs.edit()

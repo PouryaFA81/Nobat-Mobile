@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-01
+
+### Added
+- **Lock after** / **قفل پس از** under App lock: 5 minutes, 30 minutes, 1 hour, When phone locks (default) — persist preference; timer or `ACTION_SCREEN_OFF` re-requires PIN/biometric
+
+### Changed
+- **Account password** is create / change-password only; selecting a profile opens without password; unlocking the app is PIN / fingerprint
+- Removed in-app forgot-password wipe / delete-account path (data goes away on uninstall)
+
 ## [0.9.0] - 2026-10-01
 
 ### Added

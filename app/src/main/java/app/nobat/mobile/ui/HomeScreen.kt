@@ -1,5 +1,9 @@
 package app.nobat.mobile.ui
 
+import app.nobat.mobile.security.LockAfterOption
+import android.os.Build
+import android.content.IntentFilter
+import android.content.BroadcastReceiver
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -127,7 +131,6 @@ import kotlinx.coroutines.launch
 
 private enum class AppScreen {
     Entry,
-    SignIn,
     CreateAccount,
     Unlock,
     Month,
@@ -157,7 +160,6 @@ private fun AppScreen.isSensitive(): Boolean = this in setOf(
 
 private fun AppScreen.isAuthFlow(): Boolean = this in setOf(
     AppScreen.Entry,
-    AppScreen.SignIn,
     AppScreen.CreateAccount,
 )
 
@@ -194,13 +196,11 @@ fun HomeScreen(
 
     var screen by remember { mutableStateOf(AppScreen.Entry) }
     var postUnlockScreen by remember { mutableStateOf(AppScreen.Month) }
-    var signInTarget by remember { mutableStateOf<Account?>(null) }
     var createAttachOrphans by remember { mutableStateOf(false) }
     var showBook by remember { mutableStateOf(false) }
     var showLanguage by remember { mutableStateOf(false) }
     var showChangePassword by remember { mutableStateOf(false) }
     var pendingCancel by remember { mutableStateOf<Appointment?>(null) }
-    var pendingReset by remember { mutableStateOf<Account?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val bookedMsg = stringResource(R.string.booked_toast)
@@ -238,20 +238,52 @@ fun HomeScreen(
     LaunchedEffect(unlockedId) {
         if (unlockedId == null && (screen.isSensitive() || screen == AppScreen.Unlock)) {
             screen = AppScreen.Entry
-            signInTarget = null
         }
     }
 
-    // Background → require app-lock unlock again when enabled.
+    // Lock-after: timer modes measure background time; phone-locks uses SCREEN_OFF.
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP && appLock.isLockEnabled()) {
-                appLock.lockSession()
+            when (event) {
+                Lifecycle.Event.ON_STOP -> {
+                    if (appLock.isLockEnabled()) {
+                        appLock.markBackgrounded()
+                    }
+                }
+                Lifecycle.Event.ON_START -> {
+                    if (appLock.isLockEnabled()) {
+                        appLock.evaluateResumeLock()
+                    }
+                }
+                else -> Unit
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+
+        val screenOffReceiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: android.content.Context?, intent: Intent?) {
+                if (intent?.action != Intent.ACTION_SCREEN_OFF) return
+                if (!appLock.isLockEnabled()) return
+                if (appLock.getLockAfter() != LockAfterOption.WHEN_PHONE_LOCKS) return
+                appLock.lockSession()
+            }
+        }
+        val filter = IntentFilter(Intent.ACTION_SCREEN_OFF)
+        if (Build.VERSION.SDK_INT >= 33) {
+            context.registerReceiver(screenOffReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            context.registerReceiver(screenOffReceiver, filter)
+        }
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            try {
+                context.unregisterReceiver(screenOffReceiver)
+            } catch (_: Exception) {
+            }
+        }
     }
 
     // Gate sensitive UI when app lock is on and session is not unlocked.
@@ -265,7 +297,7 @@ fun HomeScreen(
         }
     }
 
-    fun goAfterAccountAuth() {
+    fun goAfterAccountOpen() {
         if (appLock.requiresUnlock()) {
             postUnlockScreen = AppScreen.Month
             screen = AppScreen.Unlock
@@ -273,7 +305,6 @@ fun HomeScreen(
             if (appLock.isLockEnabled()) appLock.markUnlocked()
             screen = AppScreen.Month
         }
-        signInTarget = null
     }
 
     Scaffold(
@@ -281,21 +312,6 @@ fun HomeScreen(
             when (screen) {
                 AppScreen.Entry -> TopAppBar(
                     title = { Text(stringResource(R.string.brand_title)) },
-                    colors = topBarColors(),
-                )
-                AppScreen.SignIn -> TopAppBar(
-                    title = { Text(stringResource(R.string.sign_in)) },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            screen = AppScreen.Entry
-                            signInTarget = null
-                        }) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.back),
-                            )
-                        }
-                    },
                     colors = topBarColors(),
                 )
                 AppScreen.CreateAccount -> TopAppBar(
@@ -482,8 +498,8 @@ fun HomeScreen(
                 accounts = accounts,
                 lastAccountId = vm.lastAccountId(),
                 onSelect = { account ->
-                    signInTarget = account
-                    screen = AppScreen.SignIn
+                    vm.openAccount(account.id)
+                    goAfterAccountOpen()
                 },
                 onAddAccount = {
                     createAttachOrphans = false
@@ -494,26 +510,6 @@ fun HomeScreen(
                     .padding(padding)
                     .padding(horizontal = 24.dp),
             )
-            AppScreen.SignIn -> {
-                val target = signInTarget
-                if (target == null) {
-                    LaunchedEffect(Unit) { screen = AppScreen.Entry }
-                } else {
-                    SignInPane(
-                        account = target,
-                        onSignIn = { password ->
-                            val ok = vm.signIn(target.id, password)
-                            if (ok) goAfterAccountAuth()
-                            ok
-                        },
-                        onForgotReset = { pendingReset = target },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                            .padding(horizontal = 24.dp),
-                    )
-                }
-            }
             AppScreen.CreateAccount -> CreateAccountPane(
                 attachOrphans = createAttachOrphans || needsOrphanMigration,
                 onCreate = { name, password ->
@@ -524,7 +520,7 @@ fun HomeScreen(
                     )
                     if (ok) {
                         createAttachOrphans = false
-                        goAfterAccountAuth()
+                        goAfterAccountOpen()
                     }
                     ok
                 },
@@ -783,28 +779,6 @@ fun HomeScreen(
         )
     }
 
-    pendingReset?.let { account ->
-        AlertDialog(
-            onDismissRequest = { pendingReset = null },
-            title = { Text(stringResource(R.string.reset_account)) },
-            text = { Text(stringResource(R.string.confirm_reset_account)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    scope.launch {
-                        vm.resetAccount(account.id)
-                        pendingReset = null
-                        signInTarget = null
-                        screen = AppScreen.Entry
-                    }
-                }) { Text(stringResource(R.string.yes)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingReset = null }) {
-                    Text(stringResource(R.string.no))
-                }
-            },
-        )
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -934,89 +908,6 @@ private fun EntryPane(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
-}
-
-@Composable
-private fun SignInPane(
-    account: Account,
-    onSignIn: suspend (CharArray) -> Boolean,
-    onForgotReset: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var password by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-    var busy by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    val wrong = stringResource(R.string.wrong_password)
-    val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focus.requestFocus() }
-
-    Column(
-        modifier = modifier.padding(vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            Icons.Outlined.AccountCircle,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(56.dp),
-        )
-        Text(
-            text = account.displayName,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Text(
-            text = stringResource(R.string.local_only_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        OutlinedTextField(
-            value = password,
-            onValueChange = {
-                password = it
-                error = null
-            },
-            label = { Text(stringResource(R.string.password)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            isError = error != null,
-            supportingText = error?.let { { Text(it) } },
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focus),
-        )
-        Button(
-            onClick = {
-                if (busy) return@Button
-                busy = true
-                scope.launch {
-                    val chars = password.toCharArray()
-                    val ok = onSignIn(chars)
-                    if (!ok) error = wrong
-                    password = ""
-                    busy = false
-                }
-            },
-            enabled = password.isNotEmpty() && !busy,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape = RoundedCornerShape(16.dp),
-        ) {
-            Text(stringResource(R.string.sign_in))
-        }
-        TextButton(onClick = onForgotReset) {
-            Text(
-                text = stringResource(R.string.forgot_reset_note),
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
             )
         }
     }
