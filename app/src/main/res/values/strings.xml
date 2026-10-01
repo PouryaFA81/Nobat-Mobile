@@ -80,6 +80,7 @@
     <!-- Notifications (Pen) -->
     <string name="notifications_title">اعلان‌ها</string>
     <string name="email_smtp">ایمیل (SMTP)</string>
+    <string name="smtp_setup_guide">راهنمای راه‌اندازی SMTP</string>
     <string name="smtp_host">میزبان</string>
     <string name="smtp_port">درگاه</string>
     <string name="smtp_username">نام کاربری</string>

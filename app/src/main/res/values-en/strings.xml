@@ -80,6 +80,7 @@
     <!-- Notifications (Pen) -->
     <string name="notifications_title">Notifications</string>
     <string name="email_smtp">Email (SMTP)</string>
+    <string name="smtp_setup_guide">SMTP setup guide</string>
     <string name="smtp_host">Host</string>
     <string name="smtp_port">Port</string>
     <string name="smtp_username">Username</string>
