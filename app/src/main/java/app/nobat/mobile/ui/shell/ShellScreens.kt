@@ -1,6 +1,17 @@
 package app.nobat.mobile.ui.shell
 
 import android.net.Uri
+import app.nobat.mobile.notify.TelegramSettingsStore
+import app.nobat.mobile.notify.TelegramSettings
+import app.nobat.mobile.notify.TelegramClient
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.clickable
+import android.content.Intent
 import java.util.Locale
 import java.time.format.DateTimeFormatter
 import java.time.YearMonth
@@ -62,16 +73,59 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private const val TELEGRAM_SETUP_GUIDE_URL_EN =
+    "https://github.com/PouryaFA81/Nobat-Mobile/blob/main/docs/TELEGRAM.md"
+private const val TELEGRAM_SETUP_GUIDE_URL_FA =
+    "https://github.com/PouryaFA81/Nobat-Mobile/blob/main/docs/TELEGRAM.fa.md"
+
 @Composable
 fun IntegrationsPane(
     snackbar: SnackbarHostState,
+    accountId: Long,
+    telegramStore: TelegramSettingsStore,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val soon = stringResource(R.string.coming_soon)
+    val savedMsg = stringResource(R.string.saved)
+    val sendOkMsg = stringResource(R.string.send_ok)
+    val failedMsg = stringResource(R.string.send_failed)
+    val testBody = stringResource(R.string.telegram_test_body)
+
+    var loaded by remember { mutableStateOf(false) }
+    var botToken by remember { mutableStateOf("") }
+    var chatId by remember { mutableStateOf("") }
+    var notifyOnBook by remember { mutableStateOf(false) }
+    var saving by remember { mutableStateOf(false) }
+    var testing by remember { mutableStateOf(false) }
+
     fun showSoon() {
         scope.launch { snackbar.showSnackbar(soon) }
     }
+
+    LaunchedEffect(accountId) {
+        if (accountId <= 0L) {
+            botToken = ""
+            chatId = ""
+            notifyOnBook = false
+            loaded = true
+            return@LaunchedEffect
+        }
+        val s = telegramStore.load(accountId)
+        botToken = s.botToken
+        chatId = s.chatId
+        notifyOnBook = s.notifyOnBook
+        loaded = true
+    }
+
+    fun currentSettings() = TelegramSettings(
+        botToken = botToken,
+        chatId = chatId,
+        notifyOnBook = notifyOnBook,
+    )
+
+    val configured = botToken.isNotBlank() && chatId.isNotBlank()
 
     Column(
         modifier = modifier
@@ -80,11 +134,146 @@ fun IntegrationsPane(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        IntegrationBlock(
-            title = stringResource(R.string.telegram),
-            tokenLabel = stringResource(R.string.bot_token),
-            onConnect = ::showSoon,
-        )
+        // —— Telegram (live) ——
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    stringResource(R.string.telegram),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                if (configured) {
+                    Text(
+                        text = stringResource(R.string.connected),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val url = if (AppLocale.isPersian(context)) {
+                            TELEGRAM_SETUP_GUIDE_URL_FA
+                        } else {
+                            TELEGRAM_SETUP_GUIDE_URL_EN
+                        }
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(R.string.telegram_setup_guide),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            if (!loaded) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else {
+                OutlinedTextField(
+                    value = botToken,
+                    onValueChange = { botToken = it },
+                    label = { Text(stringResource(R.string.bot_token)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = accountId > 0L,
+                )
+                OutlinedTextField(
+                    value = chatId,
+                    onValueChange = { chatId = it },
+                    label = { Text(stringResource(R.string.chat_id)) },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = accountId > 0L,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = stringResource(R.string.notify_on_book),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = notifyOnBook,
+                        onCheckedChange = { notifyOnBook = it },
+                        enabled = accountId > 0L,
+                    )
+                }
+                Button(
+                    onClick = {
+                        if (saving || accountId <= 0L) return@Button
+                        saving = true
+                        scope.launch {
+                            telegramStore.save(accountId, currentSettings())
+                            saving = false
+                            snackbar.showSnackbar(savedMsg)
+                        }
+                    },
+                    enabled = !saving && !testing && accountId > 0L,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                ) {
+                    Text(stringResource(R.string.notifications_save))
+                }
+                OutlinedButton(
+                    onClick = {
+                        if (testing || accountId <= 0L) return@OutlinedButton
+                        testing = true
+                        scope.launch {
+                            telegramStore.save(accountId, currentSettings())
+                            val s = currentSettings()
+                            val result = TelegramClient.sendMessage(
+                                botToken = s.botToken,
+                                chatId = s.chatId,
+                                text = testBody,
+                            )
+                            testing = false
+                            snackbar.showSnackbar(
+                                if (result.isSuccess) sendOkMsg else failedMsg,
+                            )
+                        }
+                    },
+                    enabled = !saving && !testing && configured && accountId > 0L,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                ) {
+                    if (testing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.height(20.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text(stringResource(R.string.test_send))
+                    }
+                }
+            }
+        }
+
         HorizontalDivider()
         IntegrationBlock(
             title = stringResource(R.string.bale),
@@ -128,7 +317,7 @@ private fun IntegrationBlock(
             onClick = onConnect,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(stringResource(R.string.connect))
+            Text(stringResource(R.string.connect) + " · " + stringResource(R.string.coming_soon))
         }
     }
 }
