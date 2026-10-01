@@ -222,6 +222,20 @@
     <string name="clinic_notifications_channel">اعلان‌های مطب</string>
     <string name="notif_new_appointment">نوبت جدید</string>
     <string name="notif_appointment_cancelled">نوبت لغو شد</string>
+
+    <!-- Move / reschedule (v0.15.0) -->
+    <string name="move_appointment">جابه‌جایی</string>
+    <string name="move_title">تغییر زمان</string>
+    <string name="reschedule">تغییر زمان</string>
+    <string name="new_time">زمان جدید</string>
+    <string name="new_date">تاریخ جدید</string>
+    <string name="pick_new_date">انتخاب تاریخ</string>
+    <string name="moved_toast">نوبت جابه‌جا شد</string>
+    <string name="notif_appointment_moved">نوبت جابه‌جا شد</string>
+    <string name="move_email_subject">جابه‌جایی نوبت: %1$s</string>
+    <string name="move_email_body">نوبت جابه‌جا شد: %1$s — %2$s ساعت %3$s (%4$d دقیقه)</string>
+    <string name="telegram_move_message">نوبت جابه‌جا شد: %1$s — %2$s ساعت %3$s (%4$d دقیقه) · پرسنل: %5$s</string>
+
     <string name="not_linked">پیوند نشده</string>
 
 

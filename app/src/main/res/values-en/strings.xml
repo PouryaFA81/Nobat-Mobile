@@ -222,6 +222,20 @@
     <string name="clinic_notifications_channel">Clinic notifications</string>
     <string name="notif_new_appointment">New appointment</string>
     <string name="notif_appointment_cancelled">Appointment cancelled</string>
+
+    <!-- Move / reschedule (v0.15.0) -->
+    <string name="move_appointment">Move</string>
+    <string name="move_title">Reschedule</string>
+    <string name="reschedule">Reschedule</string>
+    <string name="new_time">New time</string>
+    <string name="new_date">New date</string>
+    <string name="pick_new_date">Pick date</string>
+    <string name="moved_toast">Appointment moved</string>
+    <string name="notif_appointment_moved">Appointment moved</string>
+    <string name="move_email_subject">Appointment moved: %1$s</string>
+    <string name="move_email_body">Appointment moved: %1$s — %2$s at %3$s (%4$d min)</string>
+    <string name="telegram_move_message">Appointment moved: %1$s — %2$s at %3$s (%4$d min) · Staff: %5$s</string>
+
     <string name="not_linked">Not linked</string>
 
 
