@@ -9,8 +9,24 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * App-level lock: PIN hash (PBKDF2) + biometric toggle in EncryptedSharedPreferences.
- * In-memory [unlocked] clears when the process leaves the foreground (if lock enabled).
+ * How long after leaving the app (or when the phone locks) before PIN/biometric is required again.
+ */
+enum class LockAfterOption(val prefValue: String, val timeoutMs: Long?) {
+    FIVE_MINUTES("5m", 5L * 60L * 1000L),
+    THIRTY_MINUTES("30m", 30L * 60L * 1000L),
+    ONE_HOUR("1h", 60L * 60L * 1000L),
+    /** Lock when the screen turns off / keyguard engages — not merely when the app backgrounds. */
+    WHEN_PHONE_LOCKS("phone", null);
+
+    companion object {
+        fun fromPref(value: String?): LockAfterOption =
+            entries.firstOrNull { it.prefValue == value } ?: WHEN_PHONE_LOCKS
+    }
+}
+
+/**
+ * App-level lock: PIN hash (PBKDF2) + biometric toggle + lock-after preference
+ * in EncryptedSharedPreferences. In-memory [unlocked] clears per lock-after rules.
  */
 class AppLockStore(context: Context) {
     private val appContext = context.applicationContext
@@ -18,6 +34,9 @@ class AppLockStore(context: Context) {
 
     private val _unlocked = MutableStateFlow(false)
     val unlocked: StateFlow<Boolean> = _unlocked.asStateFlow()
+
+    /** Wall-clock ms when the app last went to background (timer modes). */
+    private var backgroundedAtMs: Long = 0L
 
     fun isPinEnabled(): Boolean =
         prefs.getBoolean(KEY_PIN_ENABLED, false) && hasPinStored()
@@ -32,10 +51,41 @@ class AppLockStore(context: Context) {
 
     fun markUnlocked() {
         _unlocked.value = true
+        backgroundedAtMs = 0L
     }
 
     fun lockSession() {
         _unlocked.value = false
+        backgroundedAtMs = 0L
+    }
+
+    fun getLockAfter(): LockAfterOption =
+        LockAfterOption.fromPref(prefs.getString(KEY_LOCK_AFTER, null))
+
+    fun setLockAfter(option: LockAfterOption) {
+        prefs.edit().putString(KEY_LOCK_AFTER, option.prefValue).apply()
+    }
+
+    /** Call on ON_STOP when a timed lock-after is selected. */
+    fun markBackgrounded(nowMs: Long = System.currentTimeMillis()) {
+        if (!isLockEnabled()) return
+        if (getLockAfter().timeoutMs == null) return
+        if (!_unlocked.value) return
+        backgroundedAtMs = nowMs
+    }
+
+    /**
+     * Call on ON_START. For timer modes, locks if the timeout elapsed while backgrounded.
+     * [WHEN_PHONE_LOCKS] is handled via screen-off broadcast, not here.
+     */
+    fun evaluateResumeLock(nowMs: Long = System.currentTimeMillis()) {
+        if (!isLockEnabled() || !_unlocked.value) return
+        val timeout = getLockAfter().timeoutMs ?: return
+        val started = backgroundedAtMs
+        if (started > 0L && nowMs - started >= timeout) {
+            lockSession()
+        }
+        backgroundedAtMs = 0L
     }
 
     fun hasPinStored(): Boolean {
@@ -109,6 +159,7 @@ class AppLockStore(context: Context) {
         private const val KEY_PIN_LENGTH = "pin_length"
         private const val KEY_PIN_ENABLED = "pin_enabled"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
+        private const val KEY_LOCK_AFTER = "lock_after"
 
         private fun createPrefs(context: Context): SharedPreferences {
             return try {
