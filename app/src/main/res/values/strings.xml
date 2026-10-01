@@ -16,7 +16,7 @@
     <string name="save">ثبت</string>
     <string name="cancel">انصراف</string>
     <string name="cancel_appointment">لغو نوبت</string>
-    <string name="confirm_cancel">این نوبت حذف می‌شود</string>
+    <string name="confirm_cancel">این نوبت حذف می‌شود. ادامه می‌دهید؟</string>
     <string name="yes">حذف</string>
     <string name="no">انصراف</string>
     <string name="prev_day">روز قبل</string>

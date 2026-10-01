@@ -5,12 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-01
+
 ### Changed
 - Booking form defaults: next :00/:30 time, 60 min duration; initials focused first
 - Empty day: goal-gradient card («هنوز نوبتی نیست» / CTA «+ نوبت اول»)
-- Cancel confirm: loss-aversion copy («این نوبت حذف می‌شود»)
+- Cancel confirm: loss-aversion copy («این نوبت حذف می‌شود. ادامه می‌دهید؟»)
 - Snackbar «نوبت ثبت شد» after save
-- English string resources (`values-en`)
+- English string resources (`values-en`) — Pen Bot final copy
 
 ## [0.2.0] - 2026-10-01
 
@@ -36,5 +38,6 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.3.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.3.0
 [0.2.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.2.0
 [0.1.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.1.0
