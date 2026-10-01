@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-01
+
+### Added
+- **Reports & Print PDF** under Advanced Settings: day or month range (This day / Pick a day / This month / Pick a month); on-device `PdfDocument` with time · client · staff · note; Share via system sheet and PrintManager (Save as PDF)
+- PDF layout (Art/Pen): orange title bar **Nobat Mobile** + range; column headers Time/ساعت · Client/مراجع · Staff/پرسنل · Note/یادداشت; FA RTL columns with LTR times; footer **Nobat Mobile**
+
+### Changed
+- Removed “Coming soon” from local Reports/print and Account hub Reports row; Drive-related Coming soon unchanged
+
 ## [0.10.0] - 2026-10-01
 
 ### Added
@@ -154,6 +163,8 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.11.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.11.0
+[0.10.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.10.0
 [0.9.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.9.0
 [0.8.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.8.1
 [0.8.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.8.0
