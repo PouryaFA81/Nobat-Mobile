@@ -1,39 +1,60 @@
 package app.nobat.mobile.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-
-private val NobatOrange = Color(0xFFE95420)
-private val NobatBg = Color(0xFF1C1C1C)
-private val NobatSurface = Color(0xFF2A2A2A)
+import androidx.compose.ui.unit.dp
 
 private val DarkColors = darkColorScheme(
-    primary = NobatOrange,
-    onPrimary = Color.White,
-    background = NobatBg,
-    surface = NobatSurface,
-    onBackground = Color(0xFFF5F5F5),
-    onSurface = Color(0xFFF5F5F5),
+    primary = Brand,
+    onPrimary = OnBrand,
+    primaryContainer = BrandMuted,
+    onPrimaryContainer = InkDark,
+    background = BgDark,
+    onBackground = InkDark,
+    surface = SurfaceDark,
+    onSurface = InkDark,
+    surfaceVariant = SurfaceRaisedDark,
+    onSurfaceVariant = MutedDark,
+    error = Danger,
+    onError = OnBrand,
 )
 
 private val LightColors = lightColorScheme(
-    primary = NobatOrange,
-    onPrimary = Color.White,
-    background = Color(0xFFF0F0F0),
-    surface = Color.White,
-    onBackground = Color(0xFF1C1C1C),
-    onSurface = Color(0xFF1C1C1C),
+    primary = Brand,
+    onPrimary = OnBrand,
+    primaryContainer = BrandMuted,
+    onPrimaryContainer = InkLight,
+    background = BgLight,
+    onBackground = InkLight,
+    surface = SurfaceLight,
+    onSurface = InkLight,
+    surfaceVariant = SurfaceRaisedLight,
+    onSurfaceVariant = MutedLight,
+    error = Danger,
+    onError = OnBrand,
+)
+
+private val NobatShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(24.dp),
 )
 
 @Composable
 fun NobatTheme(
-    darkTheme: Boolean = true, // Mobile defaults to dark (family mark)
+    darkTheme: Boolean = true, // dark-first (matches mark)
     content: @Composable () -> Unit,
 ) {
-    val colors = if (darkTheme || isSystemInDarkTheme()) DarkColors else LightColors
-    MaterialTheme(colorScheme = colors, content = content)
+    val colors = if (darkTheme) DarkColors else LightColors
+    MaterialTheme(
+        colorScheme = colors,
+        shapes = NobatShapes,
+        content = content,
+    )
 }
