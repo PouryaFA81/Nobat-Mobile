@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-01
+
 ### Added
 - **SMTP reminders (real):** when Reminders on + valid SMTP, schedules email **1 hour before** start via WorkManager (`OneTimeWorkRequest` + unique work `reminder_{id}`); reschedule/cancel on book/save settings/cancel; confirmation email to reminder recipient on book
 - **Jalali calendar (FA):** month grid + day header use Shamsi; week starts Saturday (شنبه); EN keeps Gregorian Saturday-first layout
@@ -109,6 +111,7 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.7.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.7.0
 [0.6.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.6.0
 [0.5.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.5.1
 [0.5.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.5.0
