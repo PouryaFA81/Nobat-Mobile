@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+- Local multi-account (device-only): Room `Account` (displayName, PBKDF2-HMAC-SHA256 passwordHash + salt, createdAt)
+- Entry screen: list local profiles → Sign in (password) → Month calendar; **+ Add account** / Create account
+- Sign in / Create account screens with Pen bilingual strings + local-only note
+- Account screen: Change password, Switch account, Add account, Language, Appearance/Theme stubs
+- Session: unlocked `accountId` in memory; last profile id in SharedPreferences; cold start always requires unlock
+- Appointments scoped by `accountId`; forgot-password reset deletes that account’s data
+
+### Changed
+- Room DB v1 → v2: `accounts` table + `appointments.accountId` (default 0 = orphan)
+- **Migration choice:** on upgrade, existing appointments keep `accountId=0`. If orphans exist and no accounts, first launch forces Create account and attaches orphans to the new account. Empty DB shows Create account on Entry. Documented here (not auto-default-account).
+
 ## [0.4.2] - 2026-10-01
 
 ### Added

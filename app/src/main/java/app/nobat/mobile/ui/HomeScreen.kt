@@ -28,11 +28,15 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -67,12 +71,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.nobat.mobile.NobatApp
 import app.nobat.mobile.R
+import app.nobat.mobile.data.Account
 import app.nobat.mobile.data.Appointment
 import app.nobat.mobile.locale.AppLocale
 import java.time.DayOfWeek
@@ -84,7 +90,14 @@ import java.time.format.TextStyle as DateTextStyle
 import java.util.Locale
 import kotlinx.coroutines.launch
 
-private enum class AppScreen { Entry, Month, Day, Account }
+private enum class AppScreen {
+    Entry,
+    SignIn,
+    CreateAccount,
+    Month,
+    Day,
+    Account,
+}
 
 private val LtrTextStyle: TextStyle
     @Composable get() = TextStyle(textDirection = TextDirection.Ltr)
@@ -93,26 +106,92 @@ private val LtrTextStyle: TextStyle
 @Composable
 fun HomeScreen(
     app: NobatApp,
-    vm: HomeViewModel = viewModel(factory = HomeViewModel.Factory(app.database.appointments())),
+    vm: HomeViewModel = viewModel(
+        factory = HomeViewModel.Factory(
+            dao = app.database.appointments(),
+            accountRepo = app.accounts,
+            session = app.session,
+        ),
+    ),
 ) {
     val day by vm.day.collectAsState()
     val month by vm.month.collectAsState()
     val rows by vm.appointments.collectAsState()
     val monthCounts by vm.monthCounts.collectAsState()
+    val accounts by vm.accounts.collectAsState()
+    val unlockedId by vm.unlockedAccountId.collectAsState()
+    val unlockedAccount by vm.unlockedAccount.collectAsState()
+    val needsOrphanMigration by vm.needsOrphanMigration.collectAsState()
+    val bootReady by vm.bootReady.collectAsState()
+
     var screen by remember { mutableStateOf(AppScreen.Entry) }
+    var signInTarget by remember { mutableStateOf<Account?>(null) }
+    var createAttachOrphans by remember { mutableStateOf(false) }
     var showBook by remember { mutableStateOf(false) }
     var showLanguage by remember { mutableStateOf(false) }
+    var showChangePassword by remember { mutableStateOf(false) }
     var pendingCancel by remember { mutableStateOf<Appointment?>(null) }
+    var pendingReset by remember { mutableStateOf<Account?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val bookedMsg = stringResource(R.string.booked_toast)
+    val passwordChangedMsg = stringResource(R.string.password_changed)
     val context = LocalContext.current
+
+    // Cold start: always Entry (or Create when orphan migration / empty).
+    LaunchedEffect(bootReady, needsOrphanMigration, accounts) {
+        if (!bootReady) return@LaunchedEffect
+        if (unlockedId != null) return@LaunchedEffect
+        if (needsOrphanMigration) {
+            createAttachOrphans = true
+            screen = AppScreen.CreateAccount
+        } else if (accounts.isEmpty() && screen == AppScreen.Entry) {
+            // Stay on Entry; empty state shows Create CTA.
+        }
+    }
+
+    // If session locks (switch), return to Entry.
+    LaunchedEffect(unlockedId) {
+        if (unlockedId == null && screen in listOf(AppScreen.Month, AppScreen.Day, AppScreen.Account)) {
+            screen = AppScreen.Entry
+            signInTarget = null
+        }
+    }
 
     Scaffold(
         topBar = {
             when (screen) {
                 AppScreen.Entry -> TopAppBar(
                     title = { Text(stringResource(R.string.brand_title)) },
+                    colors = topBarColors(),
+                )
+                AppScreen.SignIn -> TopAppBar(
+                    title = { Text(stringResource(R.string.sign_in)) },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            screen = AppScreen.Entry
+                            signInTarget = null
+                        }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
+                    },
+                    colors = topBarColors(),
+                )
+                AppScreen.CreateAccount -> TopAppBar(
+                    title = { Text(stringResource(R.string.create_account)) },
+                    navigationIcon = {
+                        if (!needsOrphanMigration) {
+                            IconButton(onClick = { screen = AppScreen.Entry }) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.back),
+                                )
+                            }
+                        }
+                    },
                     colors = topBarColors(),
                 )
                 AppScreen.Month -> TopAppBar(
@@ -183,9 +262,69 @@ fun HomeScreen(
             }
         },
     ) { padding ->
-        when (screen) {
+        if (!bootReady) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        } else when (screen) {
             AppScreen.Entry -> EntryPane(
-                onContinue = { screen = AppScreen.Month },
+                accounts = accounts,
+                lastAccountId = vm.lastAccountId(),
+                onSelect = { account ->
+                    signInTarget = account
+                    screen = AppScreen.SignIn
+                },
+                onAddAccount = {
+                    createAttachOrphans = false
+                    screen = AppScreen.CreateAccount
+                },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp),
+            )
+            AppScreen.SignIn -> {
+                val target = signInTarget
+                if (target == null) {
+                    LaunchedEffect(Unit) { screen = AppScreen.Entry }
+                } else {
+                    SignInPane(
+                        account = target,
+                        onSignIn = { password ->
+                            val ok = vm.signIn(target.id, password)
+                            if (ok) {
+                                screen = AppScreen.Month
+                                signInTarget = null
+                            }
+                            ok
+                        },
+                        onForgotReset = { pendingReset = target },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(horizontal = 24.dp),
+                    )
+                }
+            }
+            AppScreen.CreateAccount -> CreateAccountPane(
+                attachOrphans = createAttachOrphans || needsOrphanMigration,
+                onCreate = { name, password ->
+                    val ok = vm.createAccount(
+                        displayName = name,
+                        password = password,
+                        attachOrphans = createAttachOrphans || needsOrphanMigration,
+                    )
+                    if (ok) {
+                        createAttachOrphans = false
+                        screen = AppScreen.Month
+                    }
+                    ok
+                },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
@@ -197,9 +336,7 @@ fun HomeScreen(
                 selected = day,
                 onPrev = vm::prevMonth,
                 onNext = vm::nextMonth,
-                onToday = {
-                    vm.goToday()
-                },
+                onToday = { vm.goToday() },
                 onDayClick = { d ->
                     vm.selectDay(d)
                     screen = AppScreen.Day
@@ -236,6 +373,17 @@ fun HomeScreen(
                 }
             }
             AppScreen.Account -> AccountPane(
+                displayName = unlockedAccount?.displayName,
+                onPassword = { showChangePassword = true },
+                onSwitch = {
+                    vm.switchAccount()
+                    screen = AppScreen.Entry
+                },
+                onAddAccount = {
+                    vm.switchAccount()
+                    createAttachOrphans = false
+                    screen = AppScreen.CreateAccount
+                },
                 onLanguage = { showLanguage = true },
                 modifier = Modifier
                     .fillMaxSize()
@@ -266,6 +414,20 @@ fun HomeScreen(
         )
     }
 
+    if (showChangePassword) {
+        ChangePasswordDialog(
+            onDismiss = { showChangePassword = false },
+            onSave = { current, newPass ->
+                val ok = vm.changePassword(current, newPass)
+                if (ok) {
+                    showChangePassword = false
+                    scope.launch { snackbar.showSnackbar(passwordChangedMsg) }
+                }
+                ok
+            },
+        )
+    }
+
     pendingCancel?.let { appt ->
         AlertDialog(
             onDismissRequest = { pendingCancel = null },
@@ -284,6 +446,29 @@ fun HomeScreen(
             },
         )
     }
+
+    pendingReset?.let { account ->
+        AlertDialog(
+            onDismissRequest = { pendingReset = null },
+            title = { Text(stringResource(R.string.reset_account)) },
+            text = { Text(stringResource(R.string.confirm_reset_account)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch {
+                        vm.resetAccount(account.id)
+                        pendingReset = null
+                        signInTarget = null
+                        screen = AppScreen.Entry
+                    }
+                }) { Text(stringResource(R.string.yes)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingReset = null }) {
+                    Text(stringResource(R.string.no))
+                }
+            },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -295,68 +480,420 @@ private fun topBarColors() = TopAppBarDefaults.topAppBarColors(
 
 @Composable
 private fun EntryPane(
-    onContinue: () -> Unit,
+    accounts: List<Account>,
+    lastAccountId: Long?,
+    onSelect: (Account) -> Unit,
+    onAddAccount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center,
+    Column(
+        modifier = modifier.padding(vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 28.dp, vertical = 36.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+        Text(
+            text = stringResource(R.string.profiles_heading),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (accounts.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             ) {
-                Icon(
-                    Icons.Outlined.CalendarMonth,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(56.dp),
-                )
-                Text(
-                    text = stringResource(R.string.brand_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Button(
-                    onClick = onContinue,
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(16.dp),
+                        .padding(28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Text(
-                        text = stringResource(R.string.continue_cta),
-                        style = MaterialTheme.typography.titleMedium,
+                    Icon(
+                        Icons.Outlined.CalendarMonth,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp),
                     )
+                    Text(
+                        text = stringResource(R.string.no_accounts_hint),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        text = stringResource(R.string.local_only_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                    Button(
+                        onClick = onAddAccount,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Text(stringResource(R.string.create_account))
+                    }
                 }
             }
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.weight(1f, fill = false),
+            ) {
+                items(accounts, key = { it.id }) { account ->
+                    val highlight = account.id == lastAccountId
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(account) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (highlight) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            } else {
+                                MaterialTheme.colorScheme.surface
+                            },
+                        ),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 18.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        ) {
+                            Icon(
+                                Icons.Outlined.AccountCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(36.dp),
+                            )
+                            Text(
+                                text = account.displayName,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+            Button(
+                onClick = onAddAccount,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Text(stringResource(R.string.add_account))
+            }
+            Text(
+                text = stringResource(R.string.local_only_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
 
 @Composable
+private fun SignInPane(
+    account: Account,
+    onSignIn: suspend (CharArray) -> Boolean,
+    onForgotReset: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var password by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val wrong = stringResource(R.string.wrong_password)
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+
+    Column(
+        modifier = modifier.padding(vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            Icons.Outlined.AccountCircle,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(56.dp),
+        )
+        Text(
+            text = account.displayName,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = stringResource(R.string.local_only_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        OutlinedTextField(
+            value = password,
+            onValueChange = {
+                password = it
+                error = null
+            },
+            label = { Text(stringResource(R.string.password)) },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            isError = error != null,
+            supportingText = error?.let { { Text(it) } },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focus),
+        )
+        Button(
+            onClick = {
+                if (busy) return@Button
+                busy = true
+                scope.launch {
+                    val chars = password.toCharArray()
+                    val ok = onSignIn(chars)
+                    if (!ok) error = wrong
+                    password = ""
+                    busy = false
+                }
+            },
+            enabled = password.isNotEmpty() && !busy,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Text(stringResource(R.string.sign_in))
+        }
+        TextButton(onClick = onForgotReset) {
+            Text(
+                text = stringResource(R.string.forgot_reset_note),
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CreateAccountPane(
+    attachOrphans: Boolean,
+    onCreate: suspend (String, CharArray) -> Boolean,
+    modifier: Modifier = Modifier,
+) {
+    var name by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val mismatch = stringResource(R.string.password_mismatch)
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+
+    Column(
+        modifier = modifier.padding(vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        if (attachOrphans) {
+            Text(
+                text = stringResource(R.string.orphan_migration_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = stringResource(R.string.orphan_migration_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = stringResource(R.string.local_only_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it; error = null },
+            label = { Text(stringResource(R.string.display_name)) },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focus),
+        )
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it; error = null },
+            label = { Text(stringResource(R.string.password)) },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            value = confirm,
+            onValueChange = { confirm = it; error = null },
+            label = { Text(stringResource(R.string.confirm_password)) },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            isError = error != null,
+            supportingText = error?.let { { Text(it) } },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Button(
+            onClick = {
+                if (busy) return@Button
+                if (password != confirm) {
+                    error = mismatch
+                    return@Button
+                }
+                busy = true
+                scope.launch {
+                    val ok = onCreate(name, password.toCharArray())
+                    if (!ok) error = mismatch
+                    busy = false
+                }
+            },
+            enabled = name.isNotBlank() && password.isNotEmpty() && confirm.isNotEmpty() && !busy,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Text(stringResource(R.string.create_account))
+        }
+    }
+}
+
+@Composable
+private fun ChangePasswordDialog(
+    onDismiss: () -> Unit,
+    onSave: suspend (CharArray, CharArray) -> Boolean,
+) {
+    var current by remember { mutableStateOf("") }
+    var newPass by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val wrong = stringResource(R.string.wrong_password)
+    val mismatch = stringResource(R.string.password_mismatch)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.change_password)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = current,
+                    onValueChange = { current = it; error = null },
+                    label = { Text(stringResource(R.string.current_password)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = newPass,
+                    onValueChange = { newPass = it; error = null },
+                    label = { Text(stringResource(R.string.new_password)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = confirm,
+                    onValueChange = { confirm = it; error = null },
+                    label = { Text(stringResource(R.string.confirm_password)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    isError = error != null,
+                    supportingText = error?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (busy) return@Button
+                    if (newPass != confirm) {
+                        error = mismatch
+                        return@Button
+                    }
+                    busy = true
+                    scope.launch {
+                        val ok = onSave(current.toCharArray(), newPass.toCharArray())
+                        if (!ok) error = wrong
+                        busy = false
+                    }
+                },
+                enabled = current.isNotEmpty() && newPass.isNotEmpty() && confirm.isNotEmpty() && !busy,
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}
+
+@Composable
 private fun AccountPane(
+    displayName: String?,
+    onPassword: () -> Unit,
+    onSwitch: () -> Unit,
+    onAddAccount: () -> Unit,
     onLanguage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val soon = stringResource(R.string.coming_soon)
     Column(modifier = modifier.padding(vertical = 8.dp)) {
+        if (!displayName.isNullOrBlank()) {
+            Text(
+                text = displayName,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+            )
+            HorizontalDivider()
+        }
         AccountRow(
-            icon = {
-                Icon(Icons.Outlined.Language, contentDescription = null)
-            },
+            icon = { Icon(Icons.Outlined.Lock, contentDescription = null) },
+            title = stringResource(R.string.password),
+            subtitle = stringResource(R.string.change_password),
+            onClick = onPassword,
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.SwapHoriz, contentDescription = null) },
+            title = stringResource(R.string.switch_account),
+            subtitle = null,
+            onClick = onSwitch,
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.PersonAdd, contentDescription = null) },
+            title = stringResource(R.string.add_account),
+            subtitle = null,
+            onClick = onAddAccount,
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Language, contentDescription = null) },
             title = stringResource(R.string.language_label),
             subtitle = if (AppLocale.isPersian(context)) {
                 stringResource(R.string.language_fa)
@@ -367,27 +904,21 @@ private fun AccountPane(
         )
         HorizontalDivider()
         AccountRow(
-            icon = {
-                Icon(Icons.Outlined.Palette, contentDescription = null)
-            },
+            icon = { Icon(Icons.Outlined.Palette, contentDescription = null) },
             title = stringResource(R.string.appearance),
             subtitle = soon,
             onClick = {
                 Toast.makeText(context, soon, Toast.LENGTH_SHORT).show()
             },
-            enabled = true,
         )
         HorizontalDivider()
         AccountRow(
-            icon = {
-                Icon(Icons.Outlined.DarkMode, contentDescription = null)
-            },
+            icon = { Icon(Icons.Outlined.DarkMode, contentDescription = null) },
             title = stringResource(R.string.theme),
             subtitle = soon,
             onClick = {
                 Toast.makeText(context, soon, Toast.LENGTH_SHORT).show()
             },
-            enabled = true,
         )
     }
 }
@@ -441,7 +972,6 @@ private fun MonthCalendarPane(
     val today = LocalDate.now()
     val label = month.format(DateTimeFormatter.ofPattern("yyyy-MM", Locale.US))
     val cells = remember(month) { monthGrid(month) }
-    // Sat-first week labels to match Iranian PWA habit; still Gregorian dates.
     val weekDays = remember {
         listOf(
             DayOfWeek.SATURDAY,
@@ -517,7 +1047,7 @@ private fun MonthCalendarPane(
                                             isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
                                             isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
                                             else -> MaterialTheme.colorScheme.surface
-                                        }
+                                        },
                                     )
                                     .clickable { onDayClick(date) }
                                     .padding(4.dp),
@@ -562,9 +1092,6 @@ private fun MonthCalendarPane(
 /** Gregorian month grid, Saturday-first (matches PWA week start). */
 private fun monthGrid(month: YearMonth): List<LocalDate?> {
     val first = month.atDay(1)
-    // DayOfWeek: MON=1 … SUN=7. We want Sat=0 … Fri=6.
-    val satIndex = (first.dayOfWeek.value % 7) // Sun=0 in ISO%7? MON=1→1, … SAT=6→6, SUN=7→0
-    // We want Saturday as column 0: Sat→0, Sun→1, Mon→2, … Fri→6
     val lead = when (first.dayOfWeek) {
         DayOfWeek.SATURDAY -> 0
         DayOfWeek.SUNDAY -> 1
@@ -691,7 +1218,6 @@ private fun DayBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        // AutoMirrored Left/Right flip with LayoutDirection — do not hard-swap icons.
         IconButton(onClick = onPrev) {
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowLeft,
