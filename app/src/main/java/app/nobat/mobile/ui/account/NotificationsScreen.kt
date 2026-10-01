@@ -1,5 +1,8 @@
 package app.nobat.mobile.ui.account
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,7 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -36,11 +42,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import app.nobat.mobile.R
+import app.nobat.mobile.locale.AppLocale
 import app.nobat.mobile.notify.NotificationSettings
 import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.notify.SmsIntent
 import app.nobat.mobile.notify.SmtpClient
 import kotlinx.coroutines.launch
+
+private const val SMTP_SETUP_GUIDE_URL_EN =
+    "https://github.com/PouryaFA81/Nobat-Mobile/blob/main/docs/SMTP.md"
+private const val SMTP_SETUP_GUIDE_URL_FA =
+    "https://github.com/PouryaFA81/Nobat-Mobile/blob/main/docs/SMTP.fa.md"
 
 @Composable
 fun NotificationsPane(
@@ -133,6 +145,34 @@ fun NotificationsPane(
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    val url = if (AppLocale.isPersian(context)) {
+                        SMTP_SETUP_GUIDE_URL_FA
+                    } else {
+                        SMTP_SETUP_GUIDE_URL_EN
+                    }
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                }
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = stringResource(R.string.smtp_setup_guide),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        }
 
         OutlinedTextField(
             value = host,
