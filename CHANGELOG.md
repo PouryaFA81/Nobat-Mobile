@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+- Booking form defaults: next :00/:30 time, 60 min duration; initials focused first
+- Empty day: goal-gradient card («هنوز نوبتی نیست» / CTA «+ نوبت اول»)
+- Cancel confirm: loss-aversion copy («این نوبت حذف می‌شود»)
+- Snackbar «نوبت ثبت شد» after save
+- English string resources (`values-en`)
+
 ## [0.2.0] - 2026-10-01
 
 ### Added

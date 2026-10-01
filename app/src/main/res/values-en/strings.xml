@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nobat Mobile</string>
+    <string name="home_title">Calendar</string>
+    <string name="empty_day_title">No appointments yet</string>
+    <string name="empty_day_goal">One step to get started</string>
+    <string name="empty_day_cta">+ First appointment</string>
+    <string name="add_appointment">New appointment</string>
+    <string name="book_title">New appointment</string>
+    <string name="initials">Initials</string>
+    <string name="initials_hint">e.g. A.M</string>
+    <string name="hour">Hour</string>
+    <string name="minute">Minute</string>
+    <string name="duration">Duration (minutes)</string>
+    <string name="note">Note (optional)</string>
+    <string name="save">Save</string>
+    <string name="cancel">Dismiss</string>
+    <string name="cancel_appointment">Cancel appointment</string>
+    <string name="confirm_cancel">This appointment will be removed</string>
+    <string name="yes">Remove</string>
+    <string name="no">Keep</string>
+    <string name="prev_day">Previous day</string>
+    <string name="next_day">Next day</string>
+    <string name="today">Today</string>
+    <string name="minutes_suffix">min</string>
+    <string name="booked_toast">Appointment saved</string>
+</resources>
