@@ -119,4 +119,39 @@
     <string name="reminder_email_body">یادآوری نوبت: %1$s — %2$s ساعت %3$s (%4$d دقیقه)</string>
     <string name="confirmation_email_subject">تأیید نوبت: %1$s</string>
     <string name="confirmation_email_body">نوبت ثبت شد: %1$s — %2$s ساعت %3$s (%4$d دقیقه)</string>
+
+    <!-- Security / shells (Pen) -->
+    <string name="security">امنیت</string>
+    <string name="app_lock">قفل برنامه</string>
+    <string name="pin">رمز عددی</string>
+    <string name="fingerprint">اثر انگشت</string>
+    <string name="unlock">باز کردن</string>
+    <string name="integrations">یکپارچه‌سازی</string>
+    <string name="telegram">تلگرام</string>
+    <string name="bale">بله</string>
+    <string name="google_drive">گوگل درایو</string>
+    <string name="google_calendar">تقویم گوگل</string>
+    <string name="bot_token">توکن ربات</string>
+    <string name="connect">اتصال</string>
+    <string name="data">داده</string>
+    <string name="backup">پشتیبان</string>
+    <string name="restore">بازیابی</string>
+    <string name="local">محلی</string>
+    <string name="drive">درایو</string>
+    <string name="reports_print">گزارش و چاپ</string>
+    <string name="reports">گزارش‌ها</string>
+    <string name="print_pdf">چاپ PDF</string>
+    <string name="set_pin">تنظیم رمز عددی</string>
+    <string name="change_pin">تغییر رمز عددی</string>
+    <string name="disable_pin">خاموش کردن رمز عددی</string>
+    <string name="current_pin">رمز عددی فعلی</string>
+    <string name="confirm_pin">تکرار رمز عددی</string>
+    <string name="pin_hint">۴ تا ۶ رقم</string>
+    <string name="fingerprint_hint">باز کردن با اثر انگشت</string>
+    <string name="biometric_unavailable">اثر انگشت در این دستگاه در دسترس نیست</string>
+    <string name="wrong_pin">رمز عددی نادرست</string>
+    <string name="enter_pin">رمز عددی را وارد کنید</string>
+    <string name="delete">پاک کردن</string>
+    <string name="pin_mismatch">رمزهای عددی یکسان نیستند</string>
+    <string name="pin_too_short">حداقل ۴ رقم</string>
 </resources>
