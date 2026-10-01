@@ -54,6 +54,26 @@ Check [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the fi
 
 Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
 
+## Try it on your phone
+
+There is **no downloadable APK yet**. Two ways to see the app:
+
+### Option A — wait for a release
+When a debug build is ready, it will appear under [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases). Download the `.apk`, allow install from that source on your phone, and open it.
+
+### Option B — run from a computer (today)
+You need a computer and a USB cable.
+
+1. Install [Android Studio](https://developer.android.com/studio) (free).
+2. Open this project: **File → Open** → the folder you cloned from GitHub (`Nobat-Mobile`).
+3. On your phone: **Settings → About phone** → tap **Build number** seven times → go back → **Developer options** → turn on **USB debugging**.
+4. Plug the phone into the computer and accept the debugging prompt on the phone.
+5. In Android Studio, press **Run** ▶ and choose your phone.
+
+The first sync can take a few minutes. You should see the Nobat Mobile home screen when it finishes.
+
+**Note:** This is an early scaffold — booking and email/SMS come in the next updates.
+
 ## License
 
 [GNU Affero General Public License v3.0](LICENSE) — same family as [Nobat](https://github.com/PouryaFA81/Nobat).
