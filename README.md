@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <em>Kotlin scaffold on <code>main</code> — open in Android Studio to run</em>
+  <em><a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.2.0">v0.2.0</a> — book &amp; cancel on your phone</em>
 </p>
 
 ---
@@ -21,12 +21,12 @@ Small clinics, counselors, and front-desk teams who want a **simple appointment 
 
 If you already self-host the original [Nobat](https://github.com/PouryaFA81/Nobat) server, keep that for privacy-first hosting. **Nobat Mobile** is the sibling product for people who just want an app on the phone.
 
-## What you can do (planned v0)
+## What you can do (v0.2.0)
 
 - **Calendar & day view** — see who’s booked and when  
 - **Book, move, cancel** — client initials + time (+ optional note)  
-- **Reminders** — send via **email (SMTP)** or open your **SMS app** to message from your own number  
 - **Works offline** — data stays on the device  
+- **Reminders (next)** — email (SMTP) or your **SMS app**  
 
 Later releases can grow toward staff roles, wait lists, and more — without turning the first version into a server.
 
@@ -43,25 +43,22 @@ Same idea — appointments for a small practice. Different home.
 
 ## Status
 
-**Kotlin + Jetpack Compose scaffold** is on `main` (local Room DB stub, dark One UI–leaning theme, launcher icon). Booking / SMTP / SMS intents come next.
+**v0.2.0** pre-release is out: charcoal icon + book/cancel on a day list.  
+Download: [v0.2.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.2.0)
 
-### Run locally
-1. Install [Android Studio](https://developer.android.com/studio)
-2. Open this repo folder
-3. Let Gradle sync, then Run on an emulator or phone
-
-Check [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the first APK when it lands.
+Open the project in **Android Studio** if you prefer building from source.
 
 Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
 
 ## Try it on your phone
 
-There is **no downloadable APK yet**. Two ways to see the app:
+### Option A — download the APK (recommended)
+1. Open [Releases → v0.2.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.2.0)
+2. Download the `.apk`
+3. On your phone, allow install from that source
+4. Open **Nobat Mobile** and try **+** to book, then cancel if needed
 
-### Option A — wait for a release
-When a debug build is ready, it will appear under [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases). Download the `.apk`, allow install from that source on your phone, and open it.
-
-### Option B — run from a computer (today)
+### Option B — run from a computer
 You need a computer and a USB cable.
 
 1. Install [Android Studio](https://developer.android.com/studio) (free).
@@ -70,9 +67,9 @@ You need a computer and a USB cable.
 4. Plug the phone into the computer and accept the debugging prompt on the phone.
 5. In Android Studio, press **Run** ▶ and choose your phone.
 
-The first sync can take a few minutes. You should see the Nobat Mobile home screen when it finishes.
+The first sync can take a few minutes.
 
-**Note:** This is an early scaffold — booking and email/SMS come in the next updates.
+**Note:** Email/SMS reminders are not in 0.2.0 yet.
 
 ## License
 
