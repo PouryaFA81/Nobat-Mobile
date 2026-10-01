@@ -208,5 +208,21 @@
     <string name="report_prev_month">Previous month</string>
     <string name="report_next_month">Next month</string>
     <string name="report_no_account">No account selected</string>
+
+    <!-- Role / schedule / local notify (Pen Phase 1) -->
+    <string name="role">Role</string>
+    <string name="role_admin">Admin / Secretary</string>
+    <string name="role_staff">Staff</string>
+    <string name="link_to_personnel">Link to personnel</string>
+    <string name="schedule_everyone">Everyone</string>
+    <string name="my_schedule">My schedule</string>
+    <string name="clinic_code">Clinic code</string>
+    <string name="pick_a_person">Pick a person</string>
+    <string name="link_yourself_first">Link yourself under Account first</string>
+    <string name="clinic_notifications_channel">Clinic notifications</string>
+    <string name="notif_new_appointment">New appointment</string>
+    <string name="notif_appointment_cancelled">Appointment cancelled</string>
+    <string name="not_linked">Not linked</string>
+
 </resources>
 
