@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Yaru-ish orange on dark — matches Nobat family mark -->
+    <color name="nobat_orange">#E95420</color>
+    <color name="nobat_bg">#1C1C1C</color>
+    <color name="nobat_surface">#2A2A2A</color>
+</resources>

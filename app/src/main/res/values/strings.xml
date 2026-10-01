@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nobat Mobile</string>
+    <string name="home_title">تقویم</string>
+    <string name="scaffold_hint">Scaffold v0 — booking, SMTP و SMS به‌زودی</string>
+    <string name="empty_day">در این روز نوبتی نیست</string>
+    <string name="add_appointment">نوبت جدید</string>
+</resources>

@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <em>Coming soon — Android APK (v0 in progress)</em>
+  <em>Kotlin scaffold on <code>main</code> — open in Android Studio to run</em>
 </p>
 
 ---
@@ -43,13 +43,20 @@ Same idea — appointments for a small practice. Different home.
 
 ## Status
 
-Scaffolding **v0** now. Check [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the first APK when it lands.
+**Kotlin + Jetpack Compose scaffold** is on `main` (local Room DB stub, dark One UI–leaning theme, launcher icon). Booking / SMTP / SMS intents come next.
+
+### Run locally
+1. Install [Android Studio](https://developer.android.com/studio)
+2. Open this repo folder
+3. Let Gradle sync, then Run on an emulator or phone
+
+Check [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the first APK when it lands.
 
 Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
 
 ## License
 
-Planned as free software (license TBD with the first code commit — likely AGPL-3.0 to match Nobat).
+[GNU Affero General Public License v3.0](LICENSE) — same family as [Nobat](https://github.com/PouryaFA81/Nobat).
 
 ---
 
