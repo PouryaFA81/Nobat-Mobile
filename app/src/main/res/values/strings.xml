@@ -133,6 +133,12 @@
     <string name="google_drive">گوگل درایو</string>
     <string name="google_calendar">تقویم گوگل</string>
     <string name="bot_token">توکن ربات</string>
+    <string name="chat_id">شناسه گفتگو</string>
+    <string name="notify_on_book">اطلاع در ثبت نوبت</string>
+    <string name="connected">متصل</string>
+    <string name="telegram_setup_guide">راهنمای راه‌اندازی تلگرام</string>
+    <string name="telegram_test_body">این یک پیام آزمایشی از نوبت موبایل است.</string>
+    <string name="telegram_book_message">نوبت ثبت شد: %1$s — %2$s ساعت %3$s (%4$d دقیقه) · پرسنل: %5$s</string>
     <string name="connect">اتصال</string>
     <string name="data">داده</string>
     <string name="backup">پشتیبان</string>
