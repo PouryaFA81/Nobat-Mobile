@@ -2,6 +2,17 @@
 <resources>
     <string name="app_name">Nobat Mobile</string>
     <string name="home_title">Calendar</string>
+    <string name="nav_calendar">Calendar</string>
+    <string name="nav_add">Add</string>
+    <string name="account_title">Account</string>
+    <string name="appearance">Appearance</string>
+    <string name="theme">Theme</string>
+    <string name="coming_soon">Coming soon</string>
+    <string name="first_appointment">First appointment</string>
+    <string name="empty_month_hint">Orange number = appointments that day. Tap a day to open it.</string>
+    <string name="prev_month">Previous month</string>
+    <string name="next_month">Next month</string>
+    <string name="back">Back</string>
     <string name="empty_day_title">No appointments yet</string>
     <string name="empty_day_goal">One step to get started</string>
     <string name="empty_day_cta">+ First appointment</string>

@@ -5,14 +5,17 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import app.nobat.mobile.data.Appointment
 import app.nobat.mobile.data.AppointmentDao
+import app.nobat.mobile.data.DayCount
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -22,13 +25,39 @@ class HomeViewModel(private val dao: AppointmentDao) : ViewModel() {
     private val _day = MutableStateFlow(LocalDate.now())
     val day: StateFlow<LocalDate> = _day
 
+    private val _month = MutableStateFlow(YearMonth.now())
+    val month: StateFlow<YearMonth> = _month
+
     val appointments: StateFlow<List<Appointment>> = _day
         .flatMapLatest { d -> dao.forDay(d.format(dayFmt)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Map of ISO day → appointment count for the visible month. */
+    val monthCounts: StateFlow<Map<String, Int>> = _month
+        .flatMapLatest { ym ->
+            val start = ym.atDay(1).format(dayFmt)
+            val end = ym.atEndOfMonth().format(dayFmt)
+            dao.countsBetween(start, end)
+        }
+        .map { list: List<DayCount> -> list.associate { it.day to it.count } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
     fun prevDay() { _day.value = _day.value.minusDays(1) }
     fun nextDay() { _day.value = _day.value.plusDays(1) }
-    fun goToday() { _day.value = LocalDate.now() }
+    fun goToday() {
+        val today = LocalDate.now()
+        _day.value = today
+        _month.value = YearMonth.from(today)
+    }
+
+    fun prevMonth() { _month.value = _month.value.minusMonths(1) }
+    fun nextMonth() { _month.value = _month.value.plusMonths(1) }
+    fun goThisMonth() { _month.value = YearMonth.now() }
+
+    fun selectDay(date: LocalDate) {
+        _day.value = date
+        _month.value = YearMonth.from(date)
+    }
 
     fun book(initials: String, startMinute: Int, durationMin: Int, note: String) {
         val clean = initials.trim()

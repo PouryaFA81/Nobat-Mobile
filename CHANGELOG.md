@@ -5,6 +5,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-01
+
+### Fixed
+- Language switch actually reloads strings + RTL/LTR: MainActivity is now AppCompatActivity; `locales_config.xml` + `android:localeConfig`; AppLocalesMetadataHolderService autoStoreLocales
+- Day/month chevrons: KeyboardArrowLeft (prev/start) + KeyboardArrowRight (next/end) with AutoMirrored — no hardcoded swap
+
+### Added
+- Account screen (Account icon in header) with Language picker + stub Appearance/Theme rows
+- Month calendar scaffold (Gregorian, Sat-first): days with appointment counts; tap → day list
+
+### Changed
+- Language moved out of TopAppBar orphan action into Account
+- Pen strings: nav_calendar, nav_add, account_title, appearance, theme, first_appointment, month hints (values + values-en)
+
 ## [0.4.0] - 2026-10-01
 
 ### Added
@@ -48,6 +62,7 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.4.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.1
 [0.4.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.0
 [0.3.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.3.0
 [0.2.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.2.0

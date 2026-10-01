@@ -2,6 +2,17 @@
 <resources>
     <string name="app_name">Nobat Mobile</string>
     <string name="home_title">تقویم</string>
+    <string name="nav_calendar">تقویم</string>
+    <string name="nav_add">افزودن</string>
+    <string name="account_title">حساب</string>
+    <string name="appearance">ظاهر</string>
+    <string name="theme">پوسته</string>
+    <string name="coming_soon">به‌زودی</string>
+    <string name="first_appointment">اولین نوبت</string>
+    <string name="empty_month_hint">عدد نارنجی = تعداد نوبت آن روز. روی روز بزنید.</string>
+    <string name="prev_month">ماه قبل</string>
+    <string name="next_month">ماه بعد</string>
+    <string name="back">بازگشت</string>
     <string name="empty_day_title">هنوز نوبتی نیست</string>
     <string name="empty_day_goal">یک قدم تا شروع</string>
     <string name="empty_day_cta">+ نوبت اول</string>
