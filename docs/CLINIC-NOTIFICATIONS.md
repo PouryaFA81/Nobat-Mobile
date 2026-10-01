@@ -1,24 +1,18 @@
 # Clinic notifications setup (Nobat Mobile)
 
-Staff get **in-app** alerts for appointments assigned to them. Under the hood the app uses a notification topic on **your** existing ntfy host — the UI never says “ntfy.” Staff only see **Clinic code** / **کد مطب** and **Clinic notifications · Connected**.
+Staff get **in-app** alerts for appointments assigned to them. Under the hood the app uses a notification topic on **your** relay host — the UI never names the relay product. Staff only see **Clinic code** / **کد مطب** and **Clinic notifications · Connected**.
 
 Persian: [اعلان‌های مطب](CLINIC-NOTIFICATIONS.fa.md)
 
-## Important — friend’s Nobat stack
+## If you already use a notification relay
 
-If you already run Nobat (PWA) with ntfy for a friend:
-
-- **Do not** add a second Docker Compose or a new subdomain  
-- **Do not** edit their Compose, ports, TLS, or shared topics  
-- **Do** create a **new topic** (and optionally a token limited to that topic) on the **same** ntfy  
-
-Their old topics stay untouched. Mobile only publishes/subscribes on the new one.
+You can keep using the **same host**. Create a **new topic** (and optionally a token limited to that topic) for Mobile only. Do not reuse topics other apps already publish to, and do not change unrelated Compose, ports, or TLS unless you intend to.
 
 ---
 
 ## What you need
 
-1. Your ntfy base URL (usually `https://ntfy.yourdomain` on port 443)  
+1. Relay base URL (HTTPS), e.g. `https://ntfy.example.com`  
 2. A **new topic** name Mobile alone will use, e.g. `nobat-mobile-clinic1`  
 3. A **token** (or user) that can publish and subscribe to **only** that topic if you use ACL  
 
@@ -28,15 +22,14 @@ Clinic code in the app = base URL + topic + token (baked into one shareable stri
 
 ## 1. Create a dedicated topic (+ token)
 
-On the **existing** ntfy container (examples — adjust to your image’s CLI):
+On your relay (examples — adjust to your image’s CLI):
 
 ```bash
-# Inside the ntfy container — create a token and grant access to ONE topic only
 ntfy token add --expires=never
 ntfy access <user-or-token> nobat-mobile-clinic1 read-write
 ```
 
-If your ntfy already allows any authenticated topic, you can skip ACL and just pick a **fresh topic name** the PWA never uses.
+If authenticated clients may use any topic, you can skip ACL and just pick a **fresh topic name** nothing else uses.
 
 ---
 
@@ -64,11 +57,11 @@ They receive in-app alerts for **their** appointments. SMTP / Telegram / SMS sta
 
 ## Reliability tip
 
-With the app killed or Doze, listen-only HTTP can be late. For “phone in pocket” reliability, prefer ntfy’s **FCM upstream** on your relay when you can. Clinic LAN / always-on tablets are fine with subscribe alone.
+With the app killed or Doze, listen-only HTTP can be late. For better “phone in pocket” delivery, enable the relay’s push upstream (e.g. FCM) when you can. Always-on tablets on clinic Wi‑Fi are usually fine with subscribe alone.
 
-## IR VPS without port 443
+## Non-standard HTTPS ports
 
-Possible as `https://host:8443` inside the Clinic code, but many mobile networks block non-443. Prefer the friend’s **443** ntfy for staff phones.
+You may embed `https://host:8443` (or another TLS port) in the Clinic code. Some mobile networks block non-443; prefer standard HTTPS on 443 when possible.
 
 ## Need help?
 
