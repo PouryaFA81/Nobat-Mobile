@@ -1,5 +1,8 @@
 package app.nobat.mobile.ui.shell
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,23 +18,34 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Print
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.nobat.mobile.NobatApp
 import app.nobat.mobile.R
+import app.nobat.mobile.backup.LocalBackup
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun IntegrationsPane(
@@ -107,12 +121,132 @@ private fun IntegrationBlock(
 @Composable
 fun BackupPane(
     snackbar: SnackbarHostState,
+    accountId: Long,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    val app = context.applicationContext as NobatApp
     val scope = rememberCoroutineScope()
     val soon = stringResource(R.string.coming_soon)
+    val savedMsg = stringResource(R.string.backup_saved)
+    val restoreCompleteMsg = stringResource(R.string.restore_complete)
+    val backupFailedMsg = stringResource(R.string.backup_failed)
+    val restoreFailedMsg = stringResource(R.string.restore_failed)
+    val noAccountMsg = stringResource(R.string.backup_no_account)
+
+    var busy by remember { mutableStateOf(false) }
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+
     fun showSoon() {
         scope.launch { snackbar.showSnackbar(soon) }
+    }
+
+    val createDoc = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(LocalBackup.MIME_JSON),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        if (accountId <= 0L) {
+            scope.launch { snackbar.showSnackbar(noAccountMsg) }
+            return@rememberLauncherForActivityResult
+        }
+        busy = true
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                LocalBackup.exportToUri(
+                    context = context,
+                    db = app.database,
+                    notifyStore = app.notificationStore,
+                    accountId = accountId,
+                    uri = uri,
+                )
+            }
+            busy = false
+            snackbar.showSnackbar(
+                if (result.isSuccess) savedMsg else backupFailedMsg,
+            )
+        }
+    }
+
+    val openDoc = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        pendingRestoreUri = uri
+    }
+
+    fun runLocalBackup() {
+        if (accountId <= 0L) {
+            scope.launch { snackbar.showSnackbar(noAccountMsg) }
+            return
+        }
+        busy = true
+        scope.launch {
+            val downloads = withContext(Dispatchers.IO) {
+                LocalBackup.exportToDownloads(
+                    context = context,
+                    db = app.database,
+                    notifyStore = app.notificationStore,
+                    accountId = accountId,
+                )
+            }
+            if (downloads.isSuccess) {
+                busy = false
+                snackbar.showSnackbar(savedMsg)
+            } else {
+                // Fallback: let the user pick a save location (SAF).
+                busy = false
+                createDoc.launch(LocalBackup.suggestedFileName())
+            }
+        }
+    }
+
+    fun confirmRestore() {
+        val uri = pendingRestoreUri ?: return
+        pendingRestoreUri = null
+        if (accountId <= 0L) {
+            scope.launch { snackbar.showSnackbar(noAccountMsg) }
+            return
+        }
+        busy = true
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                LocalBackup.restoreFromUri(
+                    context = context,
+                    db = app.database,
+                    notifyStore = app.notificationStore,
+                    accountId = accountId,
+                    uri = uri,
+                )
+            }
+            busy = false
+            snackbar.showSnackbar(
+                if (result.isSuccess) restoreCompleteMsg else restoreFailedMsg,
+            )
+        }
+    }
+
+    if (pendingRestoreUri != null) {
+        AlertDialog(
+            onDismissRequest = { if (!busy) pendingRestoreUri = null },
+            title = { Text(stringResource(R.string.restore_confirm_title)) },
+            text = { Text(stringResource(R.string.restore_confirm_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = { confirmRestore() },
+                    enabled = !busy,
+                ) {
+                    Text(stringResource(R.string.restore))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { pendingRestoreUri = null },
+                    enabled = !busy,
+                ) {
+                    Text(stringResource(R.string.restore_dialog_cancel))
+                }
+            },
+        )
     }
 
     Column(
@@ -129,41 +263,49 @@ fun BackupPane(
         )
         ShellActionRow(
             icon = Icons.Outlined.Storage,
-            title = stringResource(R.string.backup),
+            title = stringResource(R.string.backup_locally),
             subtitle = stringResource(R.string.local),
             buttonLabel = stringResource(R.string.backup),
-            onClick = ::showSoon,
+            enabled = !busy && accountId > 0L,
+            onClick = { runLocalBackup() },
         )
         HorizontalDivider()
         ShellActionRow(
             icon = Icons.Outlined.Cloud,
             title = stringResource(R.string.backup),
-            subtitle = stringResource(R.string.drive),
+            subtitle = stringResource(R.string.drive) + " · " + stringResource(R.string.coming_soon),
             buttonLabel = stringResource(R.string.backup),
+            enabled = !busy,
             onClick = ::showSoon,
         )
         HorizontalDivider()
         ShellActionRow(
             icon = Icons.Outlined.Storage,
-            title = stringResource(R.string.restore),
+            title = stringResource(R.string.restore_from_local),
             subtitle = stringResource(R.string.local),
             buttonLabel = stringResource(R.string.restore),
-            onClick = ::showSoon,
+            enabled = !busy && accountId > 0L,
+            onClick = {
+                openDoc.launch(arrayOf(LocalBackup.MIME_JSON, "application/*", "text/*", "*/*"))
+            },
         )
         HorizontalDivider()
         ShellActionRow(
             icon = Icons.Outlined.Cloud,
             title = stringResource(R.string.restore),
-            subtitle = stringResource(R.string.drive),
+            subtitle = stringResource(R.string.drive) + " · " + stringResource(R.string.coming_soon),
             buttonLabel = stringResource(R.string.restore),
+            enabled = !busy,
             onClick = ::showSoon,
         )
-        Spacer(Modifier.height(8.dp))
-        OutlinedButton(
-            onClick = ::showSoon,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.save))
+        if (busy) {
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                CircularProgressIndicator()
+            }
         }
     }
 }
@@ -216,6 +358,7 @@ private fun ShellActionRow(
     subtitle: String?,
     buttonLabel: String,
     onClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
@@ -239,7 +382,7 @@ private fun ShellActionRow(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Button(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
             Text(buttonLabel)
         }
     }

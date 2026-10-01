@@ -28,6 +28,9 @@ interface PersonnelDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(person: Personnel): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(items: List<Personnel>)
+
     @Update
     suspend fun update(person: Personnel)
 
