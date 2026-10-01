@@ -8,7 +8,8 @@ import app.nobat.mobile.R
 import app.nobat.mobile.notify.SmtpClient
 
 /**
- * Sends the scheduled SMTP reminder email. Never logs the SMTP password.
+ * Sends the scheduled SMTP reminder email to the assigned personnel email
+ * (passed in work data as a snapshot). Never logs the SMTP password.
  */
 class ReminderWorker(
     appContext: Context,
@@ -21,12 +22,13 @@ class ReminderWorker(
         val day = inputData.getString(KEY_DAY).orEmpty()
         val startMinute = inputData.getInt(KEY_START_MINUTE, 0)
         val durationMin = inputData.getInt(KEY_DURATION_MIN, 60)
-        if (accountId < 0L || day.isBlank()) return Result.failure()
+        val recipient = inputData.getString(KEY_RECIPIENT_EMAIL).orEmpty().trim()
+        if (accountId < 0L || day.isBlank() || recipient.isBlank()) return Result.failure()
 
         val app = applicationContext as? NobatApp
             ?: return Result.failure()
         val settings = app.notificationStore.load(accountId)
-        if (!settings.remindersOn || !ReminderScheduler.isSmtpReady(settings)) {
+        if (!settings.remindersOn || !ReminderScheduler.isSmtpConfigured(settings)) {
             return Result.success()
         }
 
@@ -50,7 +52,7 @@ class ReminderWorker(
                 username = settings.smtpUsername,
                 password = settings.smtpPassword,
                 from = settings.smtpFrom,
-                to = settings.reminderRecipient,
+                to = recipient,
                 subject = subject,
                 body = body,
             ),
@@ -65,5 +67,6 @@ class ReminderWorker(
         const val KEY_DAY = "day"
         const val KEY_START_MINUTE = "start_minute"
         const val KEY_DURATION_MIN = "duration_min"
+        const val KEY_RECIPIENT_EMAIL = "recipient_email"
     }
 }

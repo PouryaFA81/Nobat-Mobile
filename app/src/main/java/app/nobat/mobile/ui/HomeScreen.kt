@@ -42,6 +42,7 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Sms
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -94,6 +95,7 @@ import app.nobat.mobile.NobatApp
 import app.nobat.mobile.R
 import app.nobat.mobile.data.Account
 import app.nobat.mobile.data.Appointment
+import app.nobat.mobile.data.Personnel
 import app.nobat.mobile.locale.AppLocale
 import app.nobat.mobile.calendar.Jalali
 import app.nobat.mobile.ui.theme.ThemePrefs
@@ -107,6 +109,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.nobat.mobile.ui.account.NotificationsPane
+import app.nobat.mobile.ui.account.PersonnelPane
 import app.nobat.mobile.ui.security.SecurityPane
 import app.nobat.mobile.ui.security.UnlockGatePane
 import app.nobat.mobile.ui.shell.BackupPane
@@ -131,6 +134,7 @@ private enum class AppScreen {
     Day,
     Account,
     Notifications,
+    Personnel,
     About,
     Security,
     Integrations,
@@ -143,6 +147,7 @@ private fun AppScreen.isSensitive(): Boolean = this in setOf(
     AppScreen.Day,
     AppScreen.Account,
     AppScreen.Notifications,
+    AppScreen.Personnel,
     AppScreen.About,
     AppScreen.Security,
     AppScreen.Integrations,
@@ -167,6 +172,7 @@ fun HomeScreen(
         factory = HomeViewModel.Factory(
             app = app,
             dao = app.database.appointments(),
+            personnelDao = app.database.personnel(),
             accountRepo = app.accounts,
             session = app.session,
             notificationStore = app.notificationStore,
@@ -180,6 +186,7 @@ fun HomeScreen(
     val accounts by vm.accounts.collectAsState()
     val unlockedId by vm.unlockedAccountId.collectAsState()
     val unlockedAccount by vm.unlockedAccount.collectAsState()
+    val personnel by vm.personnel.collectAsState()
     val needsOrphanMigration by vm.needsOrphanMigration.collectAsState()
     val bootReady by vm.bootReady.collectAsState()
     val appLock = app.appLock
@@ -202,6 +209,7 @@ fun HomeScreen(
     val confirmationFailedMsg = stringResource(R.string.confirmation_failed)
     val setupSmtpMsg = stringResource(R.string.setup_smtp_first)
     val setRecipientMsg = stringResource(R.string.set_recipient)
+    val addPersonnelFirstMsg = stringResource(R.string.add_personnel_first)
     var showTheme by remember { mutableStateOf(false) }
     val passwordChangedMsg = stringResource(R.string.password_changed)
     val context = LocalContext.current
@@ -350,6 +358,18 @@ fun HomeScreen(
                 )
                 AppScreen.Notifications -> TopAppBar(
                     title = { Text(stringResource(R.string.notifications_title)) },
+                    navigationIcon = {
+                        IconButton(onClick = { screen = AppScreen.Account }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
+                    },
+                    colors = topBarColors(),
+                )
+                AppScreen.Personnel -> TopAppBar(
+                    title = { Text(stringResource(R.string.personnel_title)) },
                     navigationIcon = {
                         IconButton(onClick = { screen = AppScreen.Account }) {
                             Icon(
@@ -586,6 +606,7 @@ fun HomeScreen(
                 onLanguage = { showLanguage = true },
                 onTheme = { showTheme = true },
                 onNotifications = { screen = AppScreen.Notifications },
+                onPersonnel = { screen = AppScreen.Personnel },
                 onSecurity = { screen = AppScreen.Security },
                 onIntegrations = { screen = AppScreen.Integrations },
                 onBackup = { screen = AppScreen.Backup },
@@ -611,6 +632,14 @@ fun HomeScreen(
                     )
                 }
             }
+            AppScreen.Personnel -> PersonnelPane(
+                people = personnel,
+                onSave = { id, name, email, phone -> vm.upsertPersonnel(id, name, email, phone) },
+                onDelete = { id -> vm.deletePersonnel(id) },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            )
             AppScreen.About -> AboutPane(
                 snackbar = snackbar,
                 modifier = Modifier
@@ -660,10 +689,18 @@ fun HomeScreen(
 
     if (showBook) {
         BookDialog(
+            personnel = personnel,
             onDismiss = { showBook = false },
-            onSave = { initials, start, duration, note ->
+            onNeedPersonnel = {
+                showBook = false
                 scope.launch {
-                    val result = vm.book(initials, start, duration, note)
+                    snackbar.showSnackbar(addPersonnelFirstMsg)
+                }
+                screen = AppScreen.Personnel
+            },
+            onSave = { initials, start, duration, note, personnelId ->
+                scope.launch {
+                    val result = vm.book(initials, start, duration, note, personnelId)
                     showBook = false
                     when (result) {
                         is HomeViewModel.BookResult.Ok -> {
@@ -678,9 +715,11 @@ fun HomeScreen(
                             }
                             if (result.needSmtp) {
                                 snackbar.showSnackbar(setupSmtpMsg)
-                            } else if (result.needRecipient) {
-                                snackbar.showSnackbar(setRecipientMsg)
                             }
+                        }
+                        HomeViewModel.BookResult.NeedPersonnel -> {
+                            snackbar.showSnackbar(addPersonnelFirstMsg)
+                            screen = AppScreen.Personnel
                         }
                         HomeViewModel.BookResult.Failed -> {}
                     }
@@ -1157,6 +1196,7 @@ private fun AccountPane(
     onLanguage: () -> Unit,
     onTheme: () -> Unit,
     onNotifications: () -> Unit,
+    onPersonnel: () -> Unit,
     onSecurity: () -> Unit,
     onIntegrations: () -> Unit,
     onBackup: () -> Unit,
@@ -1207,6 +1247,13 @@ private fun AccountPane(
             title = stringResource(R.string.security),
             subtitle = stringResource(R.string.app_lock),
             onClick = onSecurity,
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Groups, contentDescription = null) },
+            title = stringResource(R.string.personnel_title),
+            subtitle = null,
+            onClick = onPersonnel,
         )
 
         AccountSectionHeader(stringResource(R.string.section_preferences))
@@ -1795,8 +1842,10 @@ private fun AppointmentCard(
 
 @Composable
 private fun BookDialog(
+    personnel: List<Personnel>,
     onDismiss: () -> Unit,
-    onSave: (initials: String, startMinute: Int, durationMin: Int, note: String) -> Unit,
+    onNeedPersonnel: () -> Unit,
+    onSave: (initials: String, startMinute: Int, durationMin: Int, note: String, personnelId: Long) -> Unit,
 ) {
     val defaults = remember { nextHalfHour() }
     var initials by remember { mutableStateOf("") }
@@ -1804,10 +1853,21 @@ private fun BookDialog(
     var minute by remember { mutableIntStateOf(defaults.second) }
     var duration by remember { mutableIntStateOf(60) }
     var note by remember { mutableStateOf("") }
+    var selectedPersonnelId by remember {
+        mutableStateOf(personnel.firstOrNull()?.id ?: 0L)
+    }
     val focus = remember { FocusRequester() }
     val ltrFieldStyle = MaterialTheme.typography.bodyLarge.merge(LtrTextStyle)
 
-    LaunchedEffect(Unit) { focus.requestFocus() }
+    LaunchedEffect(Unit) {
+        if (personnel.isEmpty()) {
+            onNeedPersonnel()
+        } else {
+            focus.requestFocus()
+        }
+    }
+
+    if (personnel.isEmpty()) return
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1859,12 +1919,45 @@ private fun BookDialog(
                     label = { Text(stringResource(R.string.note)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Text(
+                    text = stringResource(R.string.assign_to),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    personnel.forEach { person ->
+                        val selected = person.id == selectedPersonnelId
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedPersonnelId = person.id }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            androidx.compose.material3.RadioButton(
+                                selected = selected,
+                                onClick = { selectedPersonnelId = person.id },
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(person.name, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    text = person.email,
+                                    style = MaterialTheme.typography.bodySmall.merge(LtrTextStyle),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
             Button(
-                onClick = { onSave(initials, hour * 60 + minute, duration, note) },
-                enabled = initials.isNotBlank(),
+                onClick = {
+                    onSave(initials, hour * 60 + minute, duration, note, selectedPersonnelId)
+                },
+                enabled = initials.isNotBlank() && selectedPersonnelId > 0L,
             ) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {

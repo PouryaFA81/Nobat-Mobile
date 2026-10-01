@@ -158,4 +158,14 @@
     <string name="delete">پاک کردن</string>
     <string name="pin_mismatch">رمزهای عددی یکسان نیستند</string>
     <string name="pin_too_short">حداقل ۴ رقم</string>
+
+    <!-- Personnel (Pen) -->
+    <string name="personnel_title">پرسنل</string>
+    <string name="add_personnel">افزودن پرسنل</string>
+    <string name="personnel_name">نام</string>
+    <string name="personnel_email">ایمیل</string>
+    <string name="personnel_phone">تلفن</string>
+    <string name="assign_to">اختصاص به</string>
+    <string name="add_personnel_first">اول پرسنل اضافه کنید</string>
+    <string name="no_personnel_yet">هنوز پرسنلی نیست</string>
 </resources>
