@@ -5,11 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-01
+
 ### Added
-- Account → **Notifications** / **اعلان‌ها**: per-account SMTP settings (host, port, TLS/SSL, username, password, from) with Save + Test send
+- Account → **Notifications** / **اعلان‌ها**: per-account SMTP settings (host, port, Use TLS, username, password, from) with Save + Test send
 - SMS via device intent (`ACTION_SENDTO` / `smsto:`) — Test from Notifications + Share via SMS on appointment cards (no `SEND_SMS` permission)
 - EncryptedSharedPreferences store keyed by `accountId` (password never logged); cleared on account reset
 - SMTP via Android JavaMail (`com.sun.mail:android-mail` + `android-activation`)
+- In-app **SMTP setup guide** / **راهنمای راه‌اندازی SMTP** (opens EN or FA docs by language)
 
 ## [0.5.1] - 2026-10-01
 
@@ -97,6 +100,7 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.6.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.6.0
 [0.5.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.5.1
 [0.5.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.5.0
 [0.4.2]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.2
