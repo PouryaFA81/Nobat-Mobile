@@ -1,5 +1,7 @@
 package app.nobat.mobile.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,7 +29,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Lightbulb
+import androidx.compose.material.icons.outlined.SystemUpdate
+import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PersonAdd
@@ -46,8 +53,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -76,11 +85,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.nobat.mobile.BuildConfig
 import app.nobat.mobile.NobatApp
 import app.nobat.mobile.R
 import app.nobat.mobile.data.Account
 import app.nobat.mobile.data.Appointment
 import app.nobat.mobile.locale.AppLocale
+import app.nobat.mobile.update.UpdateChecker
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -97,6 +108,7 @@ private enum class AppScreen {
     Month,
     Day,
     Account,
+    About,
 }
 
 private val LtrTextStyle: TextStyle
@@ -152,7 +164,7 @@ fun HomeScreen(
 
     // If session locks (switch), return to Entry.
     LaunchedEffect(unlockedId) {
-        if (unlockedId == null && screen in listOf(AppScreen.Month, AppScreen.Day, AppScreen.Account)) {
+        if (unlockedId == null && screen in listOf(AppScreen.Month, AppScreen.Day, AppScreen.Account, AppScreen.About)) {
             screen = AppScreen.Entry
             signInTarget = null
         }
@@ -230,6 +242,18 @@ fun HomeScreen(
                     title = { Text(stringResource(R.string.account_title)) },
                     navigationIcon = {
                         IconButton(onClick = { screen = AppScreen.Month }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
+                    },
+                    colors = topBarColors(),
+                )
+                AppScreen.About -> TopAppBar(
+                    title = { Text(stringResource(R.string.about)) },
+                    navigationIcon = {
+                        IconButton(onClick = { screen = AppScreen.Account }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.back),
@@ -385,6 +409,13 @@ fun HomeScreen(
                     screen = AppScreen.CreateAccount
                 },
                 onLanguage = { showLanguage = true },
+                onAbout = { screen = AppScreen.About },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            )
+            AppScreen.About -> AboutPane(
+                snackbar = snackbar,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
@@ -858,6 +889,7 @@ private fun AccountPane(
     onSwitch: () -> Unit,
     onAddAccount: () -> Unit,
     onLanguage: () -> Unit,
+    onAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -919,6 +951,108 @@ private fun AccountPane(
             onClick = {
                 Toast.makeText(context, soon, Toast.LENGTH_SHORT).show()
             },
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+            title = stringResource(R.string.about),
+            subtitle = null,
+            onClick = onAbout,
+        )
+    }
+}
+
+
+private const val URL_BUG =
+    "https://github.com/PouryaFA81/Nobat-Mobile/issues/new?labels=bug"
+private const val URL_SUGGESTIONS =
+    "https://github.com/PouryaFA81/Nobat-Mobile/issues/new?labels=enhancement"
+private const val URL_SUPPORT =
+    "https://github.com/PouryaFA81/Nobat-Mobile/issues"
+
+@Composable
+private fun AboutPane(
+    snackbar: SnackbarHostState,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val versionName = BuildConfig.VERSION_NAME
+    val upToDateMsg = stringResource(R.string.up_to_date)
+    val updateAvailableMsg = stringResource(R.string.update_available)
+    val openReleaseLabel = stringResource(R.string.open_release)
+    val checkFailedMsg = stringResource(R.string.update_check_failed)
+    var checking by remember { mutableStateOf(false) }
+
+    fun openUrl(url: String) {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
+
+    Column(modifier = modifier.padding(vertical = 8.dp)) {
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+            title = stringResource(R.string.version),
+            subtitle = versionName,
+            onClick = {},
+            enabled = false,
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.SystemUpdate, contentDescription = null) },
+            title = stringResource(R.string.check_for_updates),
+            subtitle = if (checking) "…" else null,
+            onClick = {
+                if (checking) return@AccountRow
+                checking = true
+                scope.launch {
+                    val result = UpdateChecker.check(versionName)
+                    checking = false
+                    if (result == null) {
+                        snackbar.showSnackbar(checkFailedMsg)
+                        return@launch
+                    }
+                    if (!result.updateAvailable) {
+                        snackbar.showSnackbar(upToDateMsg)
+                    } else {
+                        val action = snackbar.showSnackbar(
+                            message = updateAvailableMsg,
+                            actionLabel = openReleaseLabel,
+                            duration = SnackbarDuration.Long,
+                        )
+                        if (action == SnackbarResult.ActionPerformed) {
+                            openUrl(result.releaseUrl)
+                        }
+                    }
+                }
+            },
+            enabled = !checking,
+        )
+        HorizontalDivider()
+        Text(
+            text = stringResource(R.string.contact),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+        )
+        AccountRow(
+            icon = { Icon(Icons.Outlined.BugReport, contentDescription = null) },
+            title = stringResource(R.string.bug_report),
+            subtitle = null,
+            onClick = { openUrl(URL_BUG) },
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Lightbulb, contentDescription = null) },
+            title = stringResource(R.string.suggestions),
+            subtitle = null,
+            onClick = { openUrl(URL_SUGGESTIONS) },
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.HelpOutline, contentDescription = null) },
+            title = stringResource(R.string.support),
+            subtitle = null,
+            onClick = { openUrl(URL_SUPPORT) },
         )
     }
 }

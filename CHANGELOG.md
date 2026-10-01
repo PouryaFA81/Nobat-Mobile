@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-01
+
+### Added
+- Account → **About** / **درباره**: Version, Check for updates (GitHub Releases API, includes prereleases), Contact (Bug report / Suggestions / Support → GitHub Issues)
+- `INTERNET` permission for update check
+
 ## [0.5.0] - 2026-10-01
 
 ### Added
@@ -85,6 +91,7 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.5.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.5.1
 [0.5.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.5.0
 [0.4.2]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.2
 [0.4.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.4.1
