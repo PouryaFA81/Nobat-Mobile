@@ -119,4 +119,36 @@
     <string name="reminder_email_body">Appointment reminder: %1$s — %2$s at %3$s (%4$d min)</string>
     <string name="confirmation_email_subject">Appointment confirmed: %1$s</string>
     <string name="confirmation_email_body">Appointment saved: %1$s — %2$s at %3$s (%4$d min)</string>
+
+    <!-- Security / shells (Pen) -->
+    <string name="security">Security</string>
+    <string name="app_lock">App lock</string>
+    <string name="pin">PIN</string>
+    <string name="fingerprint">Fingerprint</string>
+    <string name="unlock">Unlock</string>
+    <string name="integrations">Integrations</string>
+    <string name="telegram">Telegram</string>
+    <string name="bale">Bale</string>
+    <string name="google_drive">Google Drive</string>
+    <string name="bot_token">Bot token</string>
+    <string name="connect">Connect</string>
+    <string name="data">Data</string>
+    <string name="backup">Backup</string>
+    <string name="restore">Restore</string>
+    <string name="local">Local</string>
+    <string name="drive">Drive</string>
+    <string name="reports_print">Reports &amp; Print</string>
+    <string name="reports">Reports</string>
+    <string name="print_pdf">Print PDF</string>
+    <string name="set_pin">Set PIN</string>
+    <string name="change_pin">Change PIN</string>
+    <string name="disable_pin">Disable PIN</string>
+    <string name="current_pin">Current PIN</string>
+    <string name="confirm_pin">Confirm PIN</string>
+    <string name="pin_hint">4 to 6 digits</string>
+    <string name="fingerprint_hint">Unlock with fingerprint</string>
+    <string name="biometric_unavailable">Fingerprint not available on this device</string>
+    <string name="wrong_pin">Wrong PIN</string>
+    <string name="pin_mismatch">PINs do not match</string>
+    <string name="pin_too_short">At least 4 digits</string>
 </resources>
