@@ -149,6 +149,8 @@
     <string name="fingerprint_hint">Unlock with fingerprint</string>
     <string name="biometric_unavailable">Fingerprint not available on this device</string>
     <string name="wrong_pin">Wrong PIN</string>
+    <string name="enter_pin">Enter PIN</string>
+    <string name="delete">Delete</string>
     <string name="pin_mismatch">PINs do not match</string>
     <string name="pin_too_short">At least 4 digits</string>
 </resources>
