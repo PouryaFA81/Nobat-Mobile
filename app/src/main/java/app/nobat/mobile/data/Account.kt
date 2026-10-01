@@ -12,4 +12,14 @@ data class Account(
     /** Base64-encoded salt. */
     val salt: String,
     val createdAt: Long = System.currentTimeMillis(),
+    /**
+     * [AccountRole.ADMIN] (default) or [AccountRole.STAFF].
+     * Admin can see Everyone + My schedule and book; Staff sees My schedule only.
+     */
+    val role: String = AccountRole.ADMIN,
+    /**
+     * Linked [Personnel] id for My schedule filtering (and required for Staff).
+     * 0 = not linked.
+     */
+    val linkedPersonnelId: Long = 0,
 )

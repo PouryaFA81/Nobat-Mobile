@@ -2,6 +2,15 @@ package app.nobat.mobile.ui
 
 import app.nobat.mobile.security.LockAfterOption
 import android.os.Build
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material.icons.outlined.Badge
+import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.QrCode
+import app.nobat.mobile.data.AccountRole
 import android.content.IntentFilter
 import android.content.BroadcastReceiver
 import android.content.Intent
@@ -192,12 +201,19 @@ fun HomeScreen(
     val personnel by vm.personnel.collectAsState()
     val needsOrphanMigration by vm.needsOrphanMigration.collectAsState()
     val bootReady by vm.bootReady.collectAsState()
+    val canBook by vm.canBook.collectAsState()
+    val showScheduleTabs by vm.showScheduleTabs.collectAsState()
+    val scheduleFilter by vm.scheduleFilter.collectAsState()
+    val needsPersonnelLink by vm.needsPersonnelLink.collectAsState()
+    val linkedPersonnelId by vm.linkedPersonnelId.collectAsState()
     val appLock = app.appLock
     val appLockUnlocked by appLock.unlocked.collectAsState()
 
     var screen by remember { mutableStateOf(AppScreen.Entry) }
     var postUnlockScreen by remember { mutableStateOf(AppScreen.Month) }
     var createAttachOrphans by remember { mutableStateOf(false) }
+    var showRolePicker by remember { mutableStateOf(false) }
+    var showLinkPersonnel by remember { mutableStateOf(false) }
     var showBook by remember { mutableStateOf(false) }
     var showLanguage by remember { mutableStateOf(false) }
     var showChangePassword by remember { mutableStateOf(false) }
@@ -214,9 +230,19 @@ fun HomeScreen(
     var showTheme by remember { mutableStateOf(false) }
     val passwordChangedMsg = stringResource(R.string.password_changed)
     val context = LocalContext.current
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { /* granted or not — book/cancel still work; notify is best-effort */ }
 
     LaunchedEffect(Unit) {
         vm.setUseJalali(AppLocale.isPersian(context))
+    }
+    LaunchedEffect(screen, unlockedId) {
+        if (unlockedId != null && (screen == AppScreen.Month || screen == AppScreen.Day)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
     val config = androidx.compose.ui.platform.LocalConfiguration.current
     LaunchedEffect(config) {
@@ -465,7 +491,7 @@ fun HomeScreen(
         },
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
-            if (screen == AppScreen.Month || screen == AppScreen.Day) {
+            if (canBook && (screen == AppScreen.Month || screen == AppScreen.Day)) {
                 FloatingActionButton(
                     onClick = {
                         if (screen == AppScreen.Month) {
@@ -530,29 +556,47 @@ fun HomeScreen(
                     .padding(padding)
                     .padding(horizontal = 24.dp),
             )
-            AppScreen.Month -> MonthCalendarPane(
-                monthAnchor = monthAnchor,
-                useJalali = AppLocale.isPersian(context),
-                counts = monthCounts,
-                selected = day,
-                onPrev = vm::prevMonth,
-                onNext = vm::nextMonth,
-                onToday = { vm.goToday() },
-                onDayClick = { d ->
-                    vm.selectDay(d)
-                    screen = AppScreen.Day
-                },
+            AppScreen.Month -> Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
                     .padding(horizontal = 16.dp),
-            )
+            ) {
+                ScheduleFilterTabs(
+                    visible = showScheduleTabs,
+                    filter = scheduleFilter,
+                    onSelect = vm::setScheduleFilter,
+                )
+                if (needsPersonnelLink) {
+                    LinkYourselfCard(onOpenAccount = { screen = AppScreen.Account })
+                } else {
+                    MonthCalendarPane(
+                        monthAnchor = monthAnchor,
+                        useJalali = AppLocale.isPersian(context),
+                        counts = monthCounts,
+                        selected = day,
+                        onPrev = vm::prevMonth,
+                        onNext = vm::nextMonth,
+                        onToday = { vm.goToday() },
+                        onDayClick = { d ->
+                            vm.selectDay(d)
+                            screen = AppScreen.Day
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
             AppScreen.Day -> Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
                     .padding(horizontal = 16.dp),
             ) {
+                ScheduleFilterTabs(
+                    visible = showScheduleTabs,
+                    filter = scheduleFilter,
+                    onSelect = vm::setScheduleFilter,
+                )
                 DayBar(
                     day = day,
                     onPrev = vm::prevDay,
@@ -560,37 +604,51 @@ fun HomeScreen(
                     onToday = vm::goToday,
                 )
                 Spacer(Modifier.height(8.dp))
-                if (rows.isEmpty()) {
-                    EmptyDayCard(onAdd = { showBook = true })
-                } else {
-                    LazyColumn(
-                        contentPadding = PaddingValues(bottom = 88.dp, top = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        items(rows, key = { it.id }) { a ->
-                            AppointmentCard(
-                                a = a,
-                                onCancel = { pendingCancel = a },
-                                onSms = {
-                                    val time = formatTime(a.startMinute)
-                                    val body = SmsIntent.reminderBody(
-                                        initials = a.initials,
-                                        date = day.format(DateTimeFormatter.ISO_LOCAL_DATE),
-                                        time = time,
-                                        durationMin = a.durationMin,
-                                        minutesSuffix = context.getString(R.string.minutes_suffix),
-                                        template = context.getString(R.string.sms_reminder_sample),
-                                    )
-                                    SmsIntent.openComposer(context, body)
-                                },
-                            )
+                when {
+                    needsPersonnelLink -> {
+                        LinkYourselfCard(onOpenAccount = { screen = AppScreen.Account })
+                    }
+                    rows.isEmpty() -> {
+                        EmptyDayCard(
+                            canBook = canBook,
+                            onAdd = { showBook = true },
+                        )
+                    }
+                    else -> {
+                        LazyColumn(
+                            contentPadding = PaddingValues(bottom = 88.dp, top = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            items(rows, key = { it.id }) { a ->
+                                AppointmentCard(
+                                    a = a,
+                                    onCancel = { pendingCancel = a },
+                                    onSms = {
+                                        val time = formatTime(a.startMinute)
+                                        val body = SmsIntent.reminderBody(
+                                            initials = a.initials,
+                                            date = day.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                                            time = time,
+                                            durationMin = a.durationMin,
+                                            minutesSuffix = context.getString(R.string.minutes_suffix),
+                                            template = context.getString(R.string.sms_reminder_sample),
+                                        )
+                                        SmsIntent.openComposer(context, body)
+                                    },
+                                )
+                            }
                         }
                     }
                 }
             }
             AppScreen.Account -> AccountPane(
                 displayName = unlockedAccount?.displayName,
+                role = unlockedAccount?.role ?: AccountRole.ADMIN,
+                linkedPersonnelId = linkedPersonnelId,
+                linkedPersonnelName = personnel.firstOrNull { it.id == linkedPersonnelId }?.name,
                 onPassword = { showChangePassword = true },
+                onRole = { showRolePicker = true },
+                onLinkPersonnel = { showLinkPersonnel = true },
                 onSwitch = {
                     vm.switchAccount()
                     screen = AppScreen.Entry
@@ -688,7 +746,7 @@ fun HomeScreen(
         }
     }
 
-    if (showBook) {
+    if (showBook && canBook) {
         BookDialog(
             personnel = personnel,
             onDismiss = { showBook = false },
@@ -761,6 +819,39 @@ fun HomeScreen(
                     scope.launch { snackbar.showSnackbar(passwordChangedMsg) }
                 }
                 ok
+            },
+        )
+    }
+
+    if (showRolePicker) {
+        RolePickerDialog(
+            current = unlockedAccount?.role ?: AccountRole.ADMIN,
+            onDismiss = { showRolePicker = false },
+            onSelect = { role ->
+                scope.launch {
+                    vm.setRole(role)
+                    showRolePicker = false
+                }
+            },
+        )
+    }
+
+    if (showLinkPersonnel) {
+        LinkPersonnelDialog(
+            people = personnel,
+            selectedId = linkedPersonnelId,
+            onDismiss = { showLinkPersonnel = false },
+            onSelect = { id ->
+                scope.launch {
+                    vm.setLinkedPersonnel(id)
+                    showLinkPersonnel = false
+                }
+            },
+            onClear = {
+                scope.launch {
+                    vm.setLinkedPersonnel(0L)
+                    showLinkPersonnel = false
+                }
             },
         )
     }
@@ -1086,7 +1177,12 @@ private fun ChangePasswordDialog(
 @Composable
 private fun AccountPane(
     displayName: String?,
+    role: String,
+    linkedPersonnelId: Long,
+    linkedPersonnelName: String?,
     onPassword: () -> Unit,
+    onRole: () -> Unit,
+    onLinkPersonnel: () -> Unit,
     onSwitch: () -> Unit,
     onAddAccount: () -> Unit,
     onLanguage: () -> Unit,
@@ -1102,6 +1198,15 @@ private fun AccountPane(
 ) {
     val context = LocalContext.current
     val dark = ThemePrefs.isDark(context)
+    val roleLabel = if (AccountRole.isStaff(role)) {
+        stringResource(R.string.role_staff)
+    } else {
+        stringResource(R.string.role_admin)
+    }
+    val linkSubtitle = when {
+        linkedPersonnelId > 0L && !linkedPersonnelName.isNullOrBlank() -> linkedPersonnelName
+        else -> stringResource(R.string.not_linked)
+    }
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
@@ -1117,6 +1222,28 @@ private fun AccountPane(
         }
 
         AccountSectionHeader(stringResource(R.string.section_account_management))
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Badge, contentDescription = null) },
+            title = stringResource(R.string.role),
+            subtitle = roleLabel,
+            onClick = onRole,
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Link, contentDescription = null) },
+            title = stringResource(R.string.link_to_personnel),
+            subtitle = linkSubtitle,
+            onClick = onLinkPersonnel,
+        )
+        HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.QrCode, contentDescription = null) },
+            title = stringResource(R.string.clinic_code),
+            subtitle = stringResource(R.string.coming_soon),
+            onClick = {},
+            enabled = false,
+        )
+        HorizontalDivider()
         AccountRow(
             icon = { Icon(Icons.Outlined.Lock, contentDescription = null) },
             title = stringResource(R.string.password),
@@ -1604,7 +1731,10 @@ private fun LanguageOption(
 }
 
 @Composable
-private fun EmptyDayCard(onAdd: () -> Unit) {
+private fun EmptyDayCard(
+    canBook: Boolean,
+    onAdd: () -> Unit,
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1636,11 +1766,160 @@ private fun EmptyDayCard(onAdd: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
-            Button(onClick = onAdd) {
-                Text(stringResource(R.string.empty_day_cta))
+            if (canBook) {
+                Button(onClick = onAdd) {
+                    Text(stringResource(R.string.empty_day_cta))
+                }
             }
         }
     }
+}
+
+@Composable
+private fun ScheduleFilterTabs(
+    visible: Boolean,
+    filter: ScheduleFilter,
+    onSelect: (ScheduleFilter) -> Unit,
+) {
+    if (!visible) return
+    val selectedIndex = if (filter == ScheduleFilter.EVERYONE) 0 else 1
+    TabRow(selectedTabIndex = selectedIndex) {
+        Tab(
+            selected = filter == ScheduleFilter.EVERYONE,
+            onClick = { onSelect(ScheduleFilter.EVERYONE) },
+            text = { Text(stringResource(R.string.schedule_everyone)) },
+        )
+        Tab(
+            selected = filter == ScheduleFilter.MY_SCHEDULE,
+            onClick = { onSelect(ScheduleFilter.MY_SCHEDULE) },
+            text = { Text(stringResource(R.string.my_schedule)) },
+        )
+    }
+    Spacer(Modifier.height(8.dp))
+}
+
+@Composable
+private fun LinkYourselfCard(onOpenAccount: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 24.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                Icons.Outlined.Link,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(48.dp),
+            )
+            Text(
+                text = stringResource(R.string.link_yourself_first),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+            )
+            OutlinedButton(onClick = onOpenAccount) {
+                Text(stringResource(R.string.account_title))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RolePickerDialog(
+    current: String,
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.role)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(
+                    onClick = { onSelect(AccountRole.ADMIN) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = stringResource(R.string.role_admin),
+                        fontWeight = if (AccountRole.isAdmin(current)) FontWeight.Bold else FontWeight.Normal,
+                    )
+                }
+                TextButton(
+                    onClick = { onSelect(AccountRole.STAFF) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = stringResource(R.string.role_staff),
+                        fontWeight = if (AccountRole.isStaff(current)) FontWeight.Bold else FontWeight.Normal,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun LinkPersonnelDialog(
+    people: List<Personnel>,
+    selectedId: Long,
+    onDismiss: () -> Unit,
+    onSelect: (Long) -> Unit,
+    onClear: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.link_to_personnel)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (people.isEmpty()) {
+                    Text(stringResource(R.string.no_personnel_yet))
+                } else {
+                    Text(
+                        text = stringResource(R.string.pick_a_person),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    people.forEach { person ->
+                        TextButton(
+                            onClick = { onSelect(person.id) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                text = person.name,
+                                fontWeight = if (person.id == selectedId) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        }
+                    }
+                }
+                if (selectedId > 0L) {
+                    TextButton(
+                        onClick = onClear,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(R.string.not_linked))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }
 
 @Composable
