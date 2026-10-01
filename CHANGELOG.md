@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-01
+
+### Added
+- **Local Backup & Restore** under Advanced Settings → Backup: export current account’s appointments, personnel, and non-secret notification prefs as JSON to Downloads (SAF fallback); restore via file picker with confirmation dialog before overwrite
+- Restore confirm (Pen): **Restore backup?** / **بازیابی پشتیبان؟** — replaces this account’s data on the phone; **Restore** / **بازیابی** · **Cancel** / **انصراف**
+
+### Changed
+- Removed “Coming soon” from local backup/restore and from the Account hub Backup row; Google Drive backup/restore rows stay Coming soon
+
 ## [0.9.1] - 2026-10-01
 
 ### Added

@@ -670,6 +670,7 @@ fun HomeScreen(
             )
             AppScreen.Backup -> BackupPane(
                 snackbar = snackbar,
+                accountId = unlockedId ?: 0L,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
@@ -1193,7 +1194,7 @@ private fun AccountPane(
         AccountRow(
             icon = { Icon(Icons.Outlined.Cloud, contentDescription = null) },
             title = stringResource(R.string.backup),
-            subtitle = stringResource(R.string.coming_soon),
+            subtitle = null,
             onClick = onBackup,
         )
         HorizontalDivider()
