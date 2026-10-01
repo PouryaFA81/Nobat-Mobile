@@ -178,6 +178,7 @@ fun HomeScreen(
             accountRepo = app.accounts,
             session = app.session,
             notificationStore = app.notificationStore,
+            telegramStore = app.telegramStore,
         ),
     ),
 ) {
@@ -664,6 +665,8 @@ fun HomeScreen(
             )
             AppScreen.Integrations -> IntegrationsPane(
                 snackbar = snackbar,
+                accountId = unlockedId ?: 0L,
+                telegramStore = app.telegramStore,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

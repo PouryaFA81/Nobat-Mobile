@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-01
+
+### Added
+- **Telegram** under Advanced Settings → Integrations: Bot token / Chat ID (EncryptedSharedPreferences), Test send via Bot API `sendMessage`, Notify on book, Connected when configured
+- In-app **Telegram setup guide** / **راهنمای راه‌اندازی تلگرام** → `docs/TELEGRAM.md` (+ FA twin)
+- On successful book, if Notify on book is on and token/chat set, posts appointment details + assigned staff name to the Integrations Chat ID (SMTP unchanged; skip Telegram if missing)
+
+### Changed
+- Removed “Coming soon” from Telegram row; Bale / Drive / Calendar stay Coming soon
+
 ## [0.11.0] - 2026-10-01
 
 ### Added
