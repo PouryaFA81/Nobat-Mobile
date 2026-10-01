@@ -78,5 +78,8 @@ dependencies {
 
     // Encrypted prefs for per-account SMTP password
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // Deferred email reminders (survives reboot; no exact-alarm permission)
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 }
 

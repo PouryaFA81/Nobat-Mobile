@@ -30,6 +30,12 @@ interface AppointmentDao {
     @Query("DELETE FROM appointments WHERE id = :id AND accountId = :accountId")
     suspend fun delete(accountId: Long, id: Long)
 
+    @Query("SELECT * FROM appointments WHERE accountId = :accountId ORDER BY day ASC, startMinute ASC")
+    suspend fun allForAccount(accountId: Long): List<Appointment>
+
+    @Query("SELECT * FROM appointments WHERE id = :id AND accountId = :accountId LIMIT 1")
+    suspend fun get(accountId: Long, id: Long): Appointment?
+
     @Query("DELETE FROM appointments WHERE accountId = :accountId")
     suspend fun deleteAllForAccount(accountId: Long)
 

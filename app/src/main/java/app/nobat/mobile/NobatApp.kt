@@ -6,6 +6,7 @@ import app.nobat.mobile.data.AppDatabase
 import app.nobat.mobile.locale.AppLocale
 import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.session.AccountSession
+import app.nobat.mobile.ui.theme.ThemePrefs
 
 class NobatApp : Application() {
     val database: AppDatabase by lazy { AppDatabase.get(this) }
@@ -23,5 +24,6 @@ class NobatApp : Application() {
     override fun onCreate() {
         super.onCreate()
         AppLocale.applyFromPrefs(this)
+        ThemePrefs.init(this)
     }
 }
