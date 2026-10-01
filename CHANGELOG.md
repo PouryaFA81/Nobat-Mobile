@@ -5,6 +5,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-01
+
+### Added
+- **Clinic notifications** / **اعلان‌های مطب** (Phase 2): Admin configures **Relay** / **رله** (URL · topic · token) under **Clinic code** / **کد مطب**; shareable **Clinic code** (`nobat1:` + base64url JSON `{"u","t","k"}`); **Share code** / **اشتراک کد**; **Regenerate** / **بازتولید** (new topic, clear token)
+- Staff: **Enter Clinic code** / **ورود کد مطب** → **Connect** / **اتصال** · **Connected** / **متصل** · **Disconnect** / **قطع اتصال**; in-app alerts for appointments assigned to linked personnel
+- Publish on admin book/cancel (JSON body with `personnelId`, initials, day, time); staff subscribe via HTTP long-poll while process alive + WorkManager 15‑min poll; resume on boot
+- EncryptedSharedPreferences for relay token/URL/topic; **Setup guide** / **راهنمای راه‌اندازی** → `docs/CLINIC-NOTIFICATIONS.md` (+ FA)
+- UI never says the relay product name (docs may name ntfy once for operators)
+
+### Changed
+- Removed “Coming soon” from Clinic code row
+- versionName **0.14.0**, versionCode **19**
+
+### Notes
+- Doze / killed app may delay listen-only HTTP; prefer always-on tablets or FCM upstream on your relay for pocket reliability
+
 ## [0.13.0] - 2026-10-01
 
 ### Added

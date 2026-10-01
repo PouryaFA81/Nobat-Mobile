@@ -15,6 +15,8 @@ import app.nobat.mobile.data.DayCount
 import app.nobat.mobile.data.Personnel
 import app.nobat.mobile.data.PersonnelDao
 import app.nobat.mobile.notify.ClinicNotifier
+import app.nobat.mobile.notify.ClinicRelayClient
+import app.nobat.mobile.notify.ClinicSettingsStore
 import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.notify.SmtpClient
 import app.nobat.mobile.notify.TelegramClient
@@ -50,6 +52,7 @@ class HomeViewModel(
     private val session: AccountSession,
     private val notificationStore: NotificationSettingsStore,
     private val telegramStore: TelegramSettingsStore,
+    private val clinicStore: ClinicSettingsStore,
 ) : AndroidViewModel(app) {
     private val dayFmt = DateTimeFormatter.ISO_LOCAL_DATE
     private val appContext = app.applicationContext
@@ -342,6 +345,21 @@ class HomeViewModel(
         val time = "%02d:%02d".format(saved.startMinute / 60, saved.startMinute % 60)
         ClinicNotifier.notifyBooked(appContext, saved.initials, saved.day, time)
 
+        // Clinic relay publish for staff phones (Phase 2). Failures do not fail the book.
+        val clinic = clinicStore.load(accountId)
+        if (clinic.isConfigured()) {
+            val title = appContext.getString(R.string.notif_new_appointment)
+            ClinicRelayClient.publish(
+                settings = clinic,
+                event = "book",
+                personnelId = person.id,
+                initials = saved.initials,
+                day = saved.day,
+                time = time,
+                title = title,
+            )
+        }
+
         return BookResult.Ok(
             reminderScheduled = reminderScheduled,
             confirmationSent = confirmationSent,
@@ -364,6 +382,19 @@ class HomeViewModel(
                     existing.day,
                     time,
                 )
+                val clinic = clinicStore.load(accountId)
+                if (clinic.isConfigured()) {
+                    val title = appContext.getString(R.string.notif_appointment_cancelled)
+                    ClinicRelayClient.publish(
+                        settings = clinic,
+                        event = "cancel",
+                        personnelId = existing.personnelId,
+                        initials = existing.initials,
+                        day = existing.day,
+                        time = time,
+                        title = title,
+                    )
+                }
             }
         }
     }
@@ -499,9 +530,10 @@ class HomeViewModel(
         private val session: AccountSession,
         private val notificationStore: NotificationSettingsStore,
         private val telegramStore: TelegramSettingsStore,
+        private val clinicStore: ClinicSettingsStore,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T =
-            HomeViewModel(app, dao, personnelDao, accountRepo, session, notificationStore, telegramStore) as T
+            HomeViewModel(app, dao, personnelDao, accountRepo, session, notificationStore, telegramStore, clinicStore) as T
     }
 }

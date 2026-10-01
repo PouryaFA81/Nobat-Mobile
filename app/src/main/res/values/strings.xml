@@ -224,5 +224,19 @@
     <string name="notif_appointment_cancelled">نوبت لغو شد</string>
     <string name="not_linked">پیوند نشده</string>
 
+
+    <!-- Clinic notifications Phase 2 (Pen) -->
+    <string name="clinic_notifications">اعلان‌های مطب</string>
+    <string name="enter_clinic_code">ورود کد مطب</string>
+    <string name="share_code">اشتراک کد</string>
+    <string name="regenerate">بازتولید</string>
+    <string name="disconnect">قطع اتصال</string>
+    <string name="relay">رله</string>
+    <string name="setup_guide">راهنمای راه‌اندازی</string>
+    <string name="invalid_clinic_code">کد نامعتبر</string>
+    <string name="relay_url">آدرس رله</string>
+    <string name="relay_topic">موضوع</string>
+    <string name="relay_token">توکن</string>
+
 </resources>
 
