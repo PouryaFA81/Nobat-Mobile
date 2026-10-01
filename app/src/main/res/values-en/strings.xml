@@ -85,12 +85,13 @@
     <string name="smtp_username">Username</string>
     <string name="smtp_password">Password</string>
     <string name="smtp_from">From</string>
-    <string name="smtp_use_tls">TLS/SSL</string>
+    <string name="smtp_use_tls">Use TLS</string>
     <string name="test_send">Test send</string>
     <string name="test_recipient">Test recipient</string>
     <string name="sms_section">SMS</string>
     <string name="sms_send_via_device">Send via device</string>
     <string name="reminders_on">Reminders on</string>
+    <string name="notifications_save">Save</string>
     <string name="saved">Saved</string>
     <string name="send_failed">Send failed</string>
     <string name="send_ok">Sent</string>
