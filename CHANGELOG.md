@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+- Book appointments (initials, time, duration, note) on a day
+- Cancel appointment with confirm dialog
+- Day prev / next / today navigation
+- RTL layout for Persian UI
+- Launcher icon B: charcoal matte + orange calendar (no gradient)
+
 ## [0.1.0] - 2026-10-01
 
 First **pre-release** debug APK (scaffold only — not feature-complete).

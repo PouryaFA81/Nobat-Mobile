@@ -2,7 +2,22 @@
 <resources>
     <string name="app_name">Nobat Mobile</string>
     <string name="home_title">تقویم</string>
-    <string name="scaffold_hint">Scaffold v0 — booking, SMTP و SMS به‌زودی</string>
     <string name="empty_day">در این روز نوبتی نیست</string>
     <string name="add_appointment">نوبت جدید</string>
+    <string name="book_title">نوبت جدید</string>
+    <string name="initials">حروف اول</string>
+    <string name="initials_hint">مثلاً ع.م</string>
+    <string name="time">ساعت</string>
+    <string name="duration">مدت (دقیقه)</string>
+    <string name="note">یادداشت (اختیاری)</string>
+    <string name="save">ثبت</string>
+    <string name="cancel">انصراف</string>
+    <string name="cancel_appointment">لغو نوبت</string>
+    <string name="confirm_cancel">این نوبت لغو شود؟</string>
+    <string name="yes">بله</string>
+    <string name="no">خیر</string>
+    <string name="prev_day">روز قبل</string>
+    <string name="next_day">روز بعد</string>
+    <string name="today">امروز</string>
+    <string name="minutes_suffix">دقیقه</string>
 </resources>
