@@ -65,12 +65,13 @@ In the app: **Account → Notifications → Email (SMTP)** → **SMTP setup guid
 
 ## Telegram setup
 
-Booking alerts use **your** Telegram bot. Create a bot with [@BotFather](https://t.me/BotFather), get a chat ID, then paste them under Integrations.
+Notify staff with **your** bot (token + chat ID). Create a bot with [@BotFather](https://t.me/BotFather), get a chat ID, then paste them under Integrations.
 
 - English: **[Telegram setup guide](docs/TELEGRAM.md)**
 - فارسی: **[راهنمای راه‌اندازی تلگرام](docs/TELEGRAM.fa.md)**
 
-In the app: **Account → Advanced Settings → Integrations → Telegram** → **Telegram setup guide**.
+In the app (from **0.12.0**): **Account → Advanced Settings → Integrations → Telegram** → **Telegram setup guide**.
+
 
 ## Try it on your phone
 
