@@ -101,4 +101,22 @@
     <string name="sms_share">SMS</string>
     <string name="smtp_test_subject">Nobat Mobile — SMTP test</string>
     <string name="smtp_test_body">This is a test email from Nobat Mobile.</string>
+
+    <!-- Reminders / theme (Pen) -->
+    <string name="remind_1h_before">Remind 1 hour before</string>
+    <string name="send_confirmation_now">Send confirmation now</string>
+    <string name="reminder_scheduled">Reminder scheduled</string>
+    <string name="confirmation_sent">Confirmation sent</string>
+    <string name="confirmation_failed">Confirmation failed</string>
+    <string name="setup_smtp_first">Set up SMTP first</string>
+    <string name="set_recipient">Set reminder recipient</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="calendar_jalali">Jalali</string>
+    <string name="calendar_gregorian">Gregorian</string>
+    <string name="reminder_recipient">Reminder recipient</string>
+    <string name="reminder_email_subject">Appointment reminder: %1$s</string>
+    <string name="reminder_email_body">Appointment reminder: %1$s — %2$s at %3$s (%4$d min)</string>
+    <string name="confirmation_email_subject">Appointment confirmed: %1$s</string>
+    <string name="confirmation_email_body">Appointment saved: %1$s — %2$s at %3$s (%4$d min)</string>
 </resources>

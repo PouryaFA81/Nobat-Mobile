@@ -59,6 +59,7 @@ fun NotificationsPane(
     accountId: Long,
     store: NotificationSettingsStore,
     snackbar: SnackbarHostState,
+    onSettingsSaved: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -137,6 +138,11 @@ fun NotificationsPane(
             )
             Switch(checked = remindersOn, onCheckedChange = { remindersOn = it })
         }
+        Text(
+            text = stringResource(R.string.remind_1h_before),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
         HorizontalDivider()
 
@@ -233,11 +239,17 @@ fun NotificationsPane(
         OutlinedTextField(
             value = testTo,
             onValueChange = { testTo = it },
-            label = { Text(stringResource(R.string.test_recipient)) },
+            label = { Text(stringResource(R.string.reminder_recipient)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
             modifier = Modifier.fillMaxWidth(),
+        )
+
+        Text(
+            text = stringResource(R.string.send_confirmation_now),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Button(
@@ -246,6 +258,7 @@ fun NotificationsPane(
                 saving = true
                 scope.launch {
                     store.save(accountId, currentSettings())
+                    onSettingsSaved()
                     saving = false
                     snackbar.showSnackbar(savedMsg)
                 }

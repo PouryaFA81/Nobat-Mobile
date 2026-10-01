@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -16,6 +18,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import app.nobat.mobile.ui.HomeScreen
 import app.nobat.mobile.ui.theme.NobatTheme
+import app.nobat.mobile.ui.theme.ThemePrefs
 
 /**
  * Must be [AppCompatActivity] so [androidx.appcompat.app.AppCompatDelegate.setApplicationLocales]
@@ -28,7 +31,8 @@ class MainActivity : AppCompatActivity() {
         syncWindowLayoutDirection()
         val app = application as NobatApp
         setContent {
-            NobatTheme {
+            val darkTheme by ThemePrefs.darkTheme.collectAsState()
+            NobatTheme(darkTheme = darkTheme) {
                 val layoutDirection = rememberAppLayoutDirection()
                 CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                     Surface(modifier = Modifier.fillMaxSize()) {
