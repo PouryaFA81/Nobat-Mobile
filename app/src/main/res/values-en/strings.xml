@@ -171,4 +171,16 @@
     <string name="assign_to">Assign to</string>
     <string name="add_personnel_first">Add personnel first</string>
     <string name="no_personnel_yet">No personnel yet</string>
+
+    <!-- Backup / restore (Pen) -->
+    <string name="backup_locally">Backup locally</string>
+    <string name="restore_from_local">Restore from local</string>
+    <string name="backup_saved">Saved to Downloads</string>
+    <string name="restore_complete">Restore complete</string>
+    <string name="restore_confirm_title">Restore backup?</string>
+    <string name="restore_confirm_body">This replaces this account’s data on the phone.</string>
+    <string name="restore_dialog_cancel">Cancel</string>
+    <string name="backup_failed">Backup failed</string>
+    <string name="restore_failed">Restore failed</string>
+    <string name="backup_no_account">No account selected</string>
 </resources>

@@ -171,4 +171,16 @@
     <string name="assign_to">اختصاص به</string>
     <string name="add_personnel_first">اول پرسنل اضافه کنید</string>
     <string name="no_personnel_yet">هنوز پرسنلی نیست</string>
+
+    <!-- Backup / restore (Pen) -->
+    <string name="backup_locally">پشتیبان‌گیری محلی</string>
+    <string name="restore_from_local">بازیابی از محلی</string>
+    <string name="backup_saved">در دانلودها ذخیره شد</string>
+    <string name="restore_complete">بازیابی انجام شد</string>
+    <string name="restore_confirm_title">بازیابی پشتیبان؟</string>
+    <string name="restore_confirm_body">دادهٔ این حساب روی گوشی جایگزین می‌شود.</string>
+    <string name="restore_dialog_cancel">انصراف</string>
+    <string name="backup_failed">پشتیبان‌گیری انجام نشد</string>
+    <string name="restore_failed">بازیابی انجام نشد</string>
+    <string name="backup_no_account">حسابی انتخاب نشده است</string>
 </resources>

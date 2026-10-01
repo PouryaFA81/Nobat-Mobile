@@ -27,6 +27,9 @@ interface AppointmentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(appointment: Appointment): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(items: List<Appointment>)
+
     @Query("DELETE FROM appointments WHERE id = :id AND accountId = :accountId")
     suspend fun delete(accountId: Long, id: Long)
 
