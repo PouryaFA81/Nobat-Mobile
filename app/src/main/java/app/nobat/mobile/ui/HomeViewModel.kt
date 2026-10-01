@@ -21,6 +21,7 @@ import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.notify.SmtpClient
 import app.nobat.mobile.notify.TelegramClient
 import app.nobat.mobile.notify.TelegramSettingsStore
+import app.nobat.mobile.digest.EveningDigestScheduler
 import app.nobat.mobile.remind.ReminderScheduler
 import app.nobat.mobile.session.AccountSession
 import java.time.LocalDate
@@ -551,6 +552,7 @@ class HomeViewModel(
             } else {
                 ReminderScheduler.rescheduleAll(appContext, all, settings)
             }
+            EveningDigestScheduler.schedule(appContext, accountId, settings)
         }
     }
 

@@ -12,6 +12,7 @@ import app.nobat.mobile.data.Appointment
 import app.nobat.mobile.data.Personnel
 import app.nobat.mobile.notify.NotificationSettings
 import app.nobat.mobile.notify.NotificationSettingsStore
+import app.nobat.mobile.digest.EveningDigestScheduler
 import app.nobat.mobile.remind.ReminderScheduler
 import org.json.JSONArray
 import org.json.JSONObject
@@ -179,6 +180,8 @@ object LocalBackup {
                 accountId,
                 NotificationSettings(
                     remindersOn = notifyObj.optBoolean("remindersOn", existing.remindersOn),
+                    eveningDigestOn = notifyObj.optBoolean("eveningDigestOn", existing.eveningDigestOn),
+                    digestTime = notifyObj.optString("digestTime", existing.digestTime),
                     smtpHost = notifyObj.optString("smtpHost", existing.smtpHost),
                     smtpPort = notifyObj.optInt("smtpPort", existing.smtpPort),
                     smtpUseTls = notifyObj.optBoolean("smtpUseTls", existing.smtpUseTls),
@@ -193,6 +196,7 @@ object LocalBackup {
 
         val settings = notifyStore.load(accountId)
         ReminderScheduler.rescheduleAll(context, restored, settings)
+        EveningDigestScheduler.schedule(context, accountId, settings)
     }
 
     private suspend fun buildJson(
@@ -254,6 +258,8 @@ object LocalBackup {
             "notificationSettings",
             JSONObject()
                 .put("remindersOn", settings.remindersOn)
+                .put("eveningDigestOn", settings.eveningDigestOn)
+                .put("digestTime", settings.digestTime)
                 .put("smtpHost", settings.smtpHost)
                 .put("smtpPort", settings.smtpPort)
                 .put("smtpUseTls", settings.smtpUseTls)
