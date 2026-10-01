@@ -5,6 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-01
+
+### Changed
+- **Account hub IA:** scrollable list so About is reachable; sections — Account Management / مدیریت حساب (Password, Switch account, Add account, App lock), Preferences / ترجیحات (Language, Appearance, Notifications), Advanced Settings / تنظیمات پیشرفته (Integrations, Backup, Reports & print), About / درباره
+
 ## [0.8.0] - 2026-10-01
 
 ### Added
@@ -120,6 +125,7 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.8.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.8.1
 [0.8.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.8.0
 [0.7.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.7.0
 [0.6.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.6.0
