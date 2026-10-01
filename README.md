@@ -74,6 +74,15 @@ Notify staff with **your** bot (token + chat ID). Create a bot with [@BotFather]
 In the app (from **0.12.0**): **Account → Advanced Settings → Integrations → Telegram** → **Telegram setup guide**.
 
 
+## Clinic notifications (multi-phone)
+
+Staff get **in-app** alerts via a **Clinic code** (your existing ntfy host + a **new topic** — friend’s Nobat topics untouched):
+
+- English: **[Clinic notifications setup](docs/CLINIC-NOTIFICATIONS.md)**
+- فارسی: **[اعلان‌های مطب](docs/CLINIC-NOTIFICATIONS.fa.md)**
+
+In the app (from **0.14.0**): **Clinic code** under Advanced Settings. The UI never says “ntfy.”
+
 ## Try it on your phone
 
 ### Option A — download the APK (recommended)
