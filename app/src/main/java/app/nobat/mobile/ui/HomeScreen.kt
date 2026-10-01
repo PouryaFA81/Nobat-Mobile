@@ -677,6 +677,7 @@ fun HomeScreen(
             )
             AppScreen.Reports -> ReportsPane(
                 snackbar = snackbar,
+                accountId = unlockedId ?: 0L,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
@@ -1201,7 +1202,7 @@ private fun AccountPane(
         AccountRow(
             icon = { Icon(Icons.Outlined.Print, contentDescription = null) },
             title = stringResource(R.string.reports_print),
-            subtitle = stringResource(R.string.coming_soon),
+            subtitle = null,
             onClick = onReports,
         )
 

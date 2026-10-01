@@ -1,6 +1,21 @@
 package app.nobat.mobile.ui.shell
 
 import android.net.Uri
+import java.util.Locale
+import java.time.format.DateTimeFormatter
+import java.time.YearMonth
+import java.time.LocalDate
+import app.nobat.mobile.report.ReportPdf
+import app.nobat.mobile.locale.AppLocale
+import app.nobat.mobile.calendar.Jalali
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.foundation.layout.widthIn
+import android.app.DatePickerDialog
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -313,12 +328,169 @@ fun BackupPane(
 @Composable
 fun ReportsPane(
     snackbar: SnackbarHostState,
+    accountId: Long,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    val app = context.applicationContext as NobatApp
     val scope = rememberCoroutineScope()
-    val soon = stringResource(R.string.coming_soon)
-    fun showSoon() {
-        scope.launch { snackbar.showSnackbar(soon) }
+    val persian = AppLocale.isPersian(context)
+    val emptyMsg = stringResource(R.string.report_empty)
+    val failedMsg = stringResource(R.string.report_failed)
+    val noAccountMsg = stringResource(R.string.report_no_account)
+
+    var modeDay by remember { mutableStateOf(true) }
+    var selectedDay by remember { mutableStateOf(LocalDate.now()) }
+    var selectedMonthAnchor by remember { mutableStateOf(LocalDate.now()) }
+    var busy by remember { mutableStateOf(false) }
+    var showMonthPicker by remember { mutableStateOf(false) }
+
+    val rangeLabel = remember(modeDay, selectedDay, selectedMonthAnchor, persian) {
+        if (modeDay) {
+            ReportPdf.dayRange(selectedDay, persian).label
+        } else {
+            ReportPdf.monthRange(selectedMonthAnchor, persian).label
+        }
+    }
+
+    fun currentRange(): ReportPdf.Range =
+        if (modeDay) ReportPdf.dayRange(selectedDay, persian)
+        else ReportPdf.monthRange(selectedMonthAnchor, persian)
+
+    fun openDayPicker() {
+        val d = selectedDay
+        DatePickerDialog(
+            context,
+            { _, y, m, day -> selectedDay = LocalDate.of(y, m + 1, day) },
+            d.year,
+            d.monthValue - 1,
+            d.dayOfMonth,
+        ).show()
+    }
+
+    data class PdfResult(val file: java.io.File, val count: Int)
+
+    suspend fun buildPdf(): Result<PdfResult> {
+        if (accountId <= 0L) return Result.failure(IllegalStateException("no account"))
+        val range = currentRange()
+        val start = range.start.format(DateTimeFormatter.ISO_LOCAL_DATE)
+        val end = range.end.format(DateTimeFormatter.ISO_LOCAL_DATE)
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val appts = app.database.appointments().between(accountId, start, end)
+                val personnel = app.database.personnel().listForAccount(accountId)
+                    .associateBy { it.id }
+                val file = ReportPdf.write(
+                    context = context,
+                    appointments = appts,
+                    personnelById = personnel,
+                    range = range,
+                    labels = ReportPdf.labels(context),
+                )
+                PdfResult(file, appts.size)
+            }
+        }
+    }
+
+    fun runShare() {
+        if (accountId <= 0L) {
+            scope.launch { snackbar.showSnackbar(noAccountMsg) }
+            return
+        }
+        busy = true
+        scope.launch {
+            val result = buildPdf()
+            busy = false
+            result.fold(
+                onSuccess = { pdf ->
+                    if (pdf.count == 0) {
+                        snackbar.showSnackbar(emptyMsg)
+                    } else {
+                        ReportPdf.share(context, pdf.file)
+                    }
+                },
+                onFailure = { snackbar.showSnackbar(failedMsg) },
+            )
+        }
+    }
+
+    fun runPrint() {
+        if (accountId <= 0L) {
+            scope.launch { snackbar.showSnackbar(noAccountMsg) }
+            return
+        }
+        busy = true
+        scope.launch {
+            val result = buildPdf()
+            busy = false
+            result.fold(
+                onSuccess = { pdf ->
+                    if (pdf.count == 0) {
+                        snackbar.showSnackbar(emptyMsg)
+                    } else {
+                        try {
+                            ReportPdf.print(
+                                context,
+                                pdf.file,
+                                context.getString(R.string.print_pdf),
+                            )
+                        } catch (_: Exception) {
+                            ReportPdf.share(context, pdf.file)
+                        }
+                    }
+                },
+                onFailure = { snackbar.showSnackbar(failedMsg) },
+            )
+        }
+    }
+
+    if (showMonthPicker) {
+        AlertDialog(
+            onDismissRequest = { showMonthPicker = false },
+            title = { Text(stringResource(R.string.report_pick_month)) },
+            text = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    TextButton(
+                        onClick = {
+                            selectedMonthAnchor = if (persian) {
+                                Jalali.plusMonths(selectedMonthAnchor, -1)
+                            } else {
+                                YearMonth.from(selectedMonthAnchor).minusMonths(1).atDay(1)
+                            }
+                        },
+                    ) { Text("‹") }
+                    Text(
+                        text = if (persian) {
+                            Jalali.monthLabel(selectedMonthAnchor)
+                        } else {
+                            YearMonth.from(selectedMonthAnchor)
+                                .format(DateTimeFormatter.ofPattern("yyyy-MM", Locale.US))
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.widthIn(min = 120.dp),
+                    )
+                    TextButton(
+                        onClick = {
+                            selectedMonthAnchor = if (persian) {
+                                Jalali.plusMonths(selectedMonthAnchor, 1)
+                            } else {
+                                YearMonth.from(selectedMonthAnchor).plusMonths(1).atDay(1)
+                            }
+                        },
+                    ) { Text("›") }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showMonthPicker = false }) {
+                    Text(stringResource(R.string.back))
+                }
+            },
+        )
     }
 
     Column(
@@ -329,25 +501,101 @@ fun ReportsPane(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            text = stringResource(R.string.reports_print),
+            text = stringResource(R.string.reports),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        ShellActionRow(
-            icon = Icons.Outlined.Print,
-            title = stringResource(R.string.reports),
-            subtitle = stringResource(R.string.coming_soon),
-            buttonLabel = stringResource(R.string.reports),
-            onClick = ::showSoon,
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            FilterChip(
+                selected = modeDay,
+                onClick = { modeDay = true },
+                label = { Text(stringResource(R.string.report_range_day)) },
+                leadingIcon = {
+                    Icon(Icons.Outlined.CalendarToday, contentDescription = null)
+                },
+            )
+            FilterChip(
+                selected = !modeDay,
+                onClick = { modeDay = false },
+                label = { Text(stringResource(R.string.report_range_month)) },
+                leadingIcon = {
+                    Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
+                },
+            )
+        }
+
+        Text(
+            text = stringResource(R.string.report_selected) + ": " + rangeLabel,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        if (modeDay) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { selectedDay = LocalDate.now() },
+                    modifier = Modifier.weight(1f),
+                    enabled = !busy,
+                ) { Text(stringResource(R.string.report_this_day)) }
+                OutlinedButton(
+                    onClick = { openDayPicker() },
+                    modifier = Modifier.weight(1f),
+                    enabled = !busy,
+                ) { Text(stringResource(R.string.report_pick_day)) }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { selectedMonthAnchor = LocalDate.now() },
+                    modifier = Modifier.weight(1f),
+                    enabled = !busy,
+                ) { Text(stringResource(R.string.report_this_month)) }
+                OutlinedButton(
+                    onClick = { showMonthPicker = true },
+                    modifier = Modifier.weight(1f),
+                    enabled = !busy,
+                ) { Text(stringResource(R.string.report_pick_month)) }
+            }
+        }
+
         HorizontalDivider()
-        ShellActionRow(
-            icon = Icons.Outlined.Print,
-            title = stringResource(R.string.print_pdf),
-            subtitle = stringResource(R.string.coming_soon),
-            buttonLabel = stringResource(R.string.print_pdf),
-            onClick = ::showSoon,
-        )
+
+        Button(
+            onClick = { runPrint() },
+            enabled = !busy && accountId > 0L,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Outlined.Print, contentDescription = null)
+            Text("  " + stringResource(R.string.print_pdf))
+        }
+        Button(
+            onClick = { runShare() },
+            enabled = !busy && accountId > 0L,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Outlined.Share, contentDescription = null)
+            Text("  " + stringResource(R.string.share))
+        }
+
+        if (busy) {
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        }
     }
 }
 
