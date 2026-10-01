@@ -40,7 +40,7 @@ If authenticated clients may use any topic, you can skip ACL and just pick a **f
 3. Status shows **Clinic notifications · Connected**  
 4. Share the **Clinic code** with staff (QR / copy). Use **Regenerate** if a code was leaked  
 
-When you book or cancel with **Assign to**, the admin phone publishes to the topic; staff phones listening show a local notification.
+When you book, cancel, or move with **Assign to**, the admin phone publishes to the topic; staff phones listening show a local notification.
 
 ---
 
