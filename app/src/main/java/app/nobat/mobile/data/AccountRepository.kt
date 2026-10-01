@@ -31,6 +31,7 @@ class AccountRepository(
      * Create a local account. When [attachOrphans] is true (post-upgrade first account),
      * existing appointments with accountId=0 are reassigned to this account.
      * Account password is for create / change-password only — day-to-day unlock is PIN/biometric.
+     * New accounts default to Admin / Secretary with no personnel link.
      */
     suspend fun createAccount(
         displayName: String,
@@ -50,6 +51,8 @@ class AccountRepository(
                 displayName = name,
                 passwordHash = PasswordHasher.encode(hash),
                 salt = PasswordHasher.encode(salt),
+                role = AccountRole.ADMIN,
+                linkedPersonnelId = 0L,
             ),
         )
         if (attachOrphans) {
@@ -88,6 +91,29 @@ class AccountRepository(
                 salt = PasswordHasher.encode(newSalt),
             ),
         )
+        return true
+    }
+
+    /** Set role to [AccountRole.ADMIN] or [AccountRole.STAFF]. */
+    suspend fun setRole(accountId: Long, role: String): Boolean {
+        if (role != AccountRole.ADMIN && role != AccountRole.STAFF) return false
+        val account = accounts.getById(accountId) ?: return false
+        accounts.update(account.copy(role = role))
+        return true
+    }
+
+    /**
+     * Link this account to a personnel row for My schedule.
+     * Pass 0 to clear. Staff should keep a valid link to see appointments.
+     */
+    suspend fun setLinkedPersonnel(accountId: Long, personnelId: Long): Boolean {
+        val account = accounts.getById(accountId) ?: return false
+        if (personnelId > 0L) {
+            val person = personnel.get(accountId, personnelId) ?: return false
+            accounts.update(account.copy(linkedPersonnelId = person.id))
+        } else {
+            accounts.update(account.copy(linkedPersonnelId = 0L))
+        }
         return true
     }
 

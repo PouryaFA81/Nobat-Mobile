@@ -208,5 +208,21 @@
     <string name="report_prev_month">ماه قبل</string>
     <string name="report_next_month">ماه بعد</string>
     <string name="report_no_account">حسابی انتخاب نشده است</string>
+
+    <!-- Role / schedule / local notify (Pen Phase 1) -->
+    <string name="role">نقش</string>
+    <string name="role_admin">مدیر یا منشی</string>
+    <string name="role_staff">پرسنل</string>
+    <string name="link_to_personnel">پیوند به پرسنل</string>
+    <string name="schedule_everyone">همه</string>
+    <string name="my_schedule">برنامهٔ من</string>
+    <string name="clinic_code">کد مطب</string>
+    <string name="pick_a_person">یک نفر را انتخاب کنید</string>
+    <string name="link_yourself_first">اول در حساب خود را به پرسنل پیوند دهید</string>
+    <string name="clinic_notifications_channel">اعلان‌های مطب</string>
+    <string name="notif_new_appointment">نوبت جدید</string>
+    <string name="notif_appointment_cancelled">نوبت لغو شد</string>
+    <string name="not_linked">پیوند نشده</string>
+
 </resources>
 
