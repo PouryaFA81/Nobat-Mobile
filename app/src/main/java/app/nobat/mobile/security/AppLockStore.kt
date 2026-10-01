@@ -44,6 +44,10 @@ class AppLockStore(context: Context) {
         return !hash.isNullOrBlank() && !salt.isNullOrBlank()
     }
 
+    /** Configured PIN length (4–6). Falls back to MAX when unset (legacy). */
+    fun pinLength(): Int =
+        prefs.getInt(KEY_PIN_LENGTH, MAX_PIN_LENGTH).coerceIn(MIN_PIN_LENGTH, MAX_PIN_LENGTH)
+
     fun setPin(pin: CharArray): Boolean {
         if (pin.size < MIN_PIN_LENGTH || pin.size > MAX_PIN_LENGTH) return false
         if (!pin.all { it.isDigit() }) return false
@@ -52,6 +56,7 @@ class AppLockStore(context: Context) {
         prefs.edit()
             .putString(KEY_PIN_HASH, PasswordHasher.encode(hash))
             .putString(KEY_PIN_SALT, PasswordHasher.encode(salt))
+            .putInt(KEY_PIN_LENGTH, pin.size)
             .putBoolean(KEY_PIN_ENABLED, true)
             .apply()
         return true
@@ -81,6 +86,7 @@ class AppLockStore(context: Context) {
         prefs.edit()
             .remove(KEY_PIN_HASH)
             .remove(KEY_PIN_SALT)
+            .remove(KEY_PIN_LENGTH)
             .putBoolean(KEY_PIN_ENABLED, false)
             .putBoolean(KEY_BIOMETRIC_ENABLED, false)
             .apply()
@@ -100,6 +106,7 @@ class AppLockStore(context: Context) {
         private const val PREFS_NAME = "nobat_applock_enc"
         private const val KEY_PIN_HASH = "pin_hash"
         private const val KEY_PIN_SALT = "pin_salt"
+        private const val KEY_PIN_LENGTH = "pin_length"
         private const val KEY_PIN_ENABLED = "pin_enabled"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
 

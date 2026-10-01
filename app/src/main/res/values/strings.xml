@@ -149,6 +149,8 @@
     <string name="fingerprint_hint">باز کردن با اثر انگشت</string>
     <string name="biometric_unavailable">اثر انگشت در این دستگاه در دسترس نیست</string>
     <string name="wrong_pin">رمز عددی نادرست</string>
+    <string name="enter_pin">رمز عددی را وارد کنید</string>
+    <string name="delete">پاک کردن</string>
     <string name="pin_mismatch">رمزهای عددی یکسان نیستند</string>
     <string name="pin_too_short">حداقل ۴ رقم</string>
 </resources>
