@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * In-memory unlocked session + last-selected account id in prefs (not unlocked).
- * Cold start always requires password unlock (or shows the entry list).
+ * Cold start shows the entry list; day-to-day app unlock is PIN/biometric when enabled.
  */
 class AccountSession(context: Context) {
     private val prefs = context.applicationContext

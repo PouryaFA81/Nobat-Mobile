@@ -55,14 +55,11 @@
     <string name="confirm_password">تکرار رمز عبور</string>
     <string name="local_only_note">فقط روی این گوشی — داده‌ها اینجا می‌مانند</string>
     <string name="wrong_password">رمز نادرست</string>
-    <string name="forgot_reset_note">فراموشی؟ بازنشانی دادهٔ این حساب را پاک می‌کند</string>
     <string name="change_password">تغییر رمز عبور</string>
     <string name="current_password">رمز فعلی</string>
     <string name="new_password">رمز جدید</string>
     <string name="password_mismatch">رمزها یکسان نیستند</string>
     <string name="password_changed">رمز تغییر کرد</string>
-    <string name="reset_account">بازنشانی حساب</string>
-    <string name="confirm_reset_account">همهٔ نوبت‌های این حساب پاک می‌شوند. ادامه می‌دهید؟</string>
     <string name="orphan_migration_title">حساب بسازید</string>
     <string name="orphan_migration_body">نوبت‌های قبلی روی این گوشی را به حساب جدید وصل می‌کنیم.</string>
     <string name="no_accounts_hint">هنوز حسابی نیست. یکی بسازید.</string>
@@ -158,6 +155,12 @@
     <string name="delete">پاک کردن</string>
     <string name="pin_mismatch">رمزهای عددی یکسان نیستند</string>
     <string name="pin_too_short">حداقل ۴ رقم</string>
+
+    <string name="lock_after">قفل پس از</string>
+    <string name="lock_after_5_min">۵ دقیقه</string>
+    <string name="lock_after_30_min">۳۰ دقیقه</string>
+    <string name="lock_after_1_hour">۱ ساعت</string>
+    <string name="lock_after_phone_locks">با قفل گوشی</string>
 
     <!-- Personnel (Pen) -->
     <string name="personnel_title">پرسنل</string>

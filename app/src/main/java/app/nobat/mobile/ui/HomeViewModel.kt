@@ -326,19 +326,14 @@ class HomeViewModel(
         return result.isSuccess
     }
 
-    suspend fun signIn(accountId: Long, password: CharArray): Boolean =
-        accountRepo.signIn(accountId, password)
+    /** Open a local profile without password — day-to-day unlock is PIN/biometric. */
+    fun openAccount(accountId: Long) {
+        session.unlock(accountId)
+    }
 
     suspend fun changePassword(current: CharArray, newPassword: CharArray): Boolean {
         val id = session.unlockedAccountId.value ?: return false
         return accountRepo.changePassword(id, current, newPassword)
-    }
-
-    suspend fun resetAccount(accountId: Long) {
-        val all = dao.allForAccount(accountId)
-        for (a in all) ReminderScheduler.cancel(appContext, a.id)
-        accountRepo.resetAccount(accountId)
-        _needsOrphanMigration.value = accountRepo.needsOrphanMigration()
     }
 
     fun switchAccount() {
