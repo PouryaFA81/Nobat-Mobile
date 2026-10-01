@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+- In-app language picker (فارسی / English) on Home — SharedPreferences + AppCompatDelegate.setApplicationLocales
+
+### Changed
+- LayoutDirection follows app language (FA → RTL, EN → LTR) instead of hard-coded Rtl
+- Time/date/duration numerals stay LTR (`TextDirection.Ltr`) in both languages
+- Window/decor layout direction synced with app locale for dialogs and system chrome
+
 ## [0.3.0] - 2026-10-01
 
 ### Changed

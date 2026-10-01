@@ -24,4 +24,7 @@
     <string name="today">امروز</string>
     <string name="minutes_suffix">دقیقه</string>
     <string name="booked_toast">نوبت ثبت شد</string>
+    <string name="language_label">زبان</string>
+    <string name="language_fa">فارسی</string>
+    <string name="language_en">English</string>
 </resources>

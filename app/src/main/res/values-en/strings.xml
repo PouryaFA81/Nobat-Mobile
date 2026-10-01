@@ -24,4 +24,7 @@
     <string name="today">Today</string>
     <string name="minutes_suffix">min</string>
     <string name="booked_toast">Appointment saved</string>
+    <string name="language_label">Language</string>
+    <string name="language_fa">فارسی</string>
+    <string name="language_en">English</string>
 </resources>

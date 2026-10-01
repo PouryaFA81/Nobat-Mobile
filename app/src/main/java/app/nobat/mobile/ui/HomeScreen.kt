@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -49,18 +50,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.nobat.mobile.NobatApp
 import app.nobat.mobile.R
 import app.nobat.mobile.data.Appointment
+import app.nobat.mobile.locale.AppLocale
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.launch
+
+private val LtrTextStyle: TextStyle
+    @Composable get() = TextStyle(textDirection = TextDirection.Ltr)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,15 +80,22 @@ fun HomeScreen(
     val day by vm.day.collectAsState()
     val rows by vm.appointments.collectAsState()
     var showBook by remember { mutableStateOf(false) }
+    var showLanguage by remember { mutableStateOf(false) }
     var pendingCancel by remember { mutableStateOf<Appointment?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val bookedMsg = stringResource(R.string.booked_toast)
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.home_title)) },
+                actions = {
+                    TextButton(onClick = { showLanguage = true }) {
+                        Text(stringResource(R.string.language_label))
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface,
@@ -136,6 +152,17 @@ fun HomeScreen(
         )
     }
 
+    if (showLanguage) {
+        LanguageDialog(
+            current = AppLocale.getPreference(context),
+            onDismiss = { showLanguage = false },
+            onSelect = { tag ->
+                showLanguage = false
+                AppLocale.setPreference(context, tag)
+            },
+        )
+    }
+
     pendingCancel?.let { appt ->
         AlertDialog(
             onDismissRequest = { pendingCancel = null },
@@ -157,6 +184,63 @@ fun HomeScreen(
 }
 
 @Composable
+private fun LanguageDialog(
+    current: String,
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit,
+) {
+    val context = LocalContext.current
+    val effective = AppLocale.effectiveLanguage(context)
+    val selected = when (current) {
+        AppLocale.FA, AppLocale.EN -> current
+        else -> effective
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.language_label)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                LanguageOption(
+                    label = stringResource(R.string.language_fa),
+                    selected = selected == AppLocale.FA,
+                    onClick = { onSelect(AppLocale.FA) },
+                )
+                LanguageOption(
+                    label = stringResource(R.string.language_en),
+                    selected = selected == AppLocale.EN,
+                    onClick = { onSelect(AppLocale.EN) },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun LanguageOption(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    TextButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Start,
+            color = if (selected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+        )
+    }
+}
+
+@Composable
 private fun EmptyDayCard(onAdd: () -> Unit) {
     Card(
         modifier = Modifier
@@ -172,6 +256,7 @@ private fun EmptyDayCard(onAdd: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // Non-directional brand/calendar glyph — do not auto-mirror.
             Icon(
                 Icons.Outlined.CalendarMonth,
                 contentDescription = null,
@@ -216,7 +301,10 @@ private fun DayBar(
             )
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleMedium.merge(LtrTextStyle),
+            )
             TextButton(onClick = onToday) { Text(stringResource(R.string.today)) }
         }
         IconButton(onClick = onNext) {
@@ -245,13 +333,13 @@ private fun AppointmentCard(a: Appointment, onCancel: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = formatTime(a.startMinute),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.merge(LtrTextStyle),
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(text = a.initials, style = MaterialTheme.typography.bodyLarge)
                 Text(
                     text = "${a.durationMin} ${stringResource(R.string.minutes_suffix)}",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall.merge(LtrTextStyle),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (a.note.isNotBlank()) {
@@ -281,6 +369,7 @@ private fun BookDialog(
     var duration by remember { mutableIntStateOf(60) }
     var note by remember { mutableStateOf("") }
     val focus = remember { FocusRequester() }
+    val ltrFieldStyle = MaterialTheme.typography.bodyLarge.merge(LtrTextStyle)
 
     LaunchedEffect(Unit) { focus.requestFocus() }
 
@@ -305,6 +394,8 @@ private fun BookDialog(
                         onValueChange = { v -> v.toIntOrNull()?.let { hour = it.coerceIn(0, 23) } },
                         label = { Text(stringResource(R.string.hour)) },
                         singleLine = true,
+                        textStyle = ltrFieldStyle,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                     )
                     OutlinedTextField(
@@ -312,6 +403,8 @@ private fun BookDialog(
                         onValueChange = { v -> v.toIntOrNull()?.let { minute = it.coerceIn(0, 59) } },
                         label = { Text(stringResource(R.string.minute)) },
                         singleLine = true,
+                        textStyle = ltrFieldStyle,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -320,6 +413,8 @@ private fun BookDialog(
                     onValueChange = { v -> v.toIntOrNull()?.let { duration = it.coerceIn(15, 480) } },
                     label = { Text(stringResource(R.string.duration)) },
                     singleLine = true,
+                    textStyle = ltrFieldStyle,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
