@@ -71,6 +71,15 @@ The first sync can take a few minutes.
 
 **Note:** Email/SMS reminders are not in 0.2.0 yet.
 
+## Email (SMTP) setup
+
+Reminders use **your** mailbox. Step-by-step for Gmail, Outlook, Yahoo, and custom hosts:
+
+- English: **[SMTP setup guide](docs/SMTP.md)**
+- فارسی: **[راهنمای راه‌اندازی SMTP](docs/SMTP.fa.md)**
+
+In the app (from **0.6.0**): **Account → Notifications → Email (SMTP)** → **SMTP setup guide**.
+
 ## License
 
 [GNU Affero General Public License v3.0](LICENSE) — same family as [Nobat](https://github.com/PouryaFA81/Nobat).
