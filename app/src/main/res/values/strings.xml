@@ -183,4 +183,24 @@
     <string name="backup_failed">پشتیبان‌گیری انجام نشد</string>
     <string name="restore_failed">بازیابی انجام نشد</string>
     <string name="backup_no_account">حسابی انتخاب نشده است</string>
+
+    <!-- Reports / PDF (Pen) -->
+    <string name="report_this_day">امروز</string>
+    <string name="report_this_month">این ماه</string>
+    <string name="report_pick_day">انتخاب روز</string>
+    <string name="report_pick_month">انتخاب ماه</string>
+    <string name="share">اشتراک‌گذاری</string>
+    <string name="report_empty">در این بازه نوبتی نیست</string>
+    <string name="report_range_day">روز</string>
+    <string name="report_range_month">ماه</string>
+    <string name="report_col_time">ساعت</string>
+    <string name="report_col_client">مراجع</string>
+    <string name="report_col_staff">پرسنل</string>
+    <string name="report_col_note">یادداشت</string>
+    <string name="report_selected">بازه</string>
+    <string name="report_failed">ساخت PDF انجام نشد</string>
+    <string name="report_prev_month">ماه قبل</string>
+    <string name="report_next_month">ماه بعد</string>
+    <string name="report_no_account">حسابی انتخاب نشده است</string>
 </resources>
+
