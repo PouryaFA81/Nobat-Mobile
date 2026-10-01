@@ -1,11 +1,21 @@
 package app.nobat.mobile
 
 import android.app.Application
+import app.nobat.mobile.data.AccountRepository
 import app.nobat.mobile.data.AppDatabase
 import app.nobat.mobile.locale.AppLocale
+import app.nobat.mobile.session.AccountSession
 
 class NobatApp : Application() {
     val database: AppDatabase by lazy { AppDatabase.get(this) }
+    val session: AccountSession by lazy { AccountSession(this) }
+    val accounts: AccountRepository by lazy {
+        AccountRepository(
+            accounts = database.accounts(),
+            appointments = database.appointments(),
+            session = session,
+        )
+    }
 
     override fun onCreate() {
         super.onCreate()
