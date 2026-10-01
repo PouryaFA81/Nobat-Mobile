@@ -5,6 +5,8 @@ import app.nobat.mobile.data.AccountRepository
 import app.nobat.mobile.data.AppDatabase
 import app.nobat.mobile.locale.AppLocale
 import app.nobat.mobile.notify.NotificationSettingsStore
+import app.nobat.mobile.notify.ClinicSettingsStore
+import app.nobat.mobile.notify.ClinicSubscribe
 import app.nobat.mobile.notify.TelegramSettingsStore
 import app.nobat.mobile.security.AppLockStore
 import app.nobat.mobile.session.AccountSession
@@ -15,6 +17,7 @@ class NobatApp : Application() {
     val session: AccountSession by lazy { AccountSession(this) }
     val notificationStore: NotificationSettingsStore by lazy { NotificationSettingsStore(this) }
     val telegramStore: TelegramSettingsStore by lazy { TelegramSettingsStore(this) }
+    val clinicStore: ClinicSettingsStore by lazy { ClinicSettingsStore(this) }
     val appLock: AppLockStore by lazy { AppLockStore(this) }
     val accounts: AccountRepository by lazy {
         AccountRepository(
@@ -29,5 +32,6 @@ class NobatApp : Application() {
         super.onCreate()
         AppLocale.applyFromPrefs(this)
         ThemePrefs.init(this)
+        ClinicSubscribe.startLive(this)
     }
 }

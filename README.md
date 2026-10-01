@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.13.0">v0.13.0</a></em>
+  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.14.0">v0.14.0</a></em>
 </p>
 
 ---
@@ -21,7 +21,7 @@ Small clinics, counselors, and front-desk teams who want a **simple appointment 
 
 If you already self-host the original [Nobat](https://github.com/PouryaFA81/Nobat) server, keep that for privacy-first hosting. **Nobat Mobile** is the sibling product for people who just want an app on the phone.
 
-## What’s in the app (v0.13.0)
+## What’s in the app (v0.14.0)
 
 - **Local accounts** — Several profiles on one phone; password for create/change only; unlock with PIN/fingerprint; data stays on the device  
 - **Personnel** — Staff list (name, email, phone); book **Assign to** so SMTP confirmation + 1h reminder go to that person  
@@ -38,7 +38,8 @@ If you already self-host the original [Nobat](https://github.com/PouryaFA81/Noba
 - **Reports & Print PDF** — Advanced Settings → Reports: day/month range; on-device PDF; Share / Print  
 - **Telegram** — Integrations: your bot token + chat ID; Test send; optional notify on book (staff name + appointment in message)  
 - **Role & My schedule** — Admin / Secretary or Staff; link to personnel; Admin Everyone + My schedule tabs; Staff My schedule only (no FAB); local notify on book/cancel  
-- **Coming soon (shells)** — Bale, Google Drive, Google Calendar, Drive backup, Clinic code  
+- **Clinic notifications** — Admin Relay + shareable Clinic code; Staff paste code → Connect; in-app alerts for assigned appointments (SMTP/Telegram stay extras)  
+- **Coming soon (shells)** — Bale, Google Drive, Google Calendar, Drive backup  
 
 Next: Drive sync and the remaining shells.
 
@@ -87,7 +88,7 @@ In the app (from **0.14.0**): **Clinic code** under Advanced Settings. The UI ne
 
 ### Option A — download the APK (recommended)
 
-1. Open [Releases → v0.13.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.13.0) (or the latest pre-release)
+1. Open [Releases → v0.14.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.14.0) (or the latest pre-release)
 2. Download the `.apk`
 3. On your phone, allow install from that source
 4. Open **Nobat Mobile**, create or unlock a local account, then use the calendar
@@ -106,7 +107,7 @@ The first sync can take a few minutes.
 
 ## Status
 
-Pre-release dogfood builds. Booking, accounts, roles/My schedule, app lock, language, SMTP reminders, Telegram, and themes are in **v0.13.0**. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
+Pre-release dogfood builds. Booking, accounts, roles/My schedule, clinic notifications, app lock, language, SMTP reminders, Telegram, and themes are in **v0.14.0**. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
 
 Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
 
