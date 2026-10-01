@@ -62,6 +62,15 @@ Reminders use **your** mailbox. Step-by-step for Gmail, Outlook, Yahoo, and cust
 
 In the app: **Account → Notifications → Email (SMTP)** → **SMTP setup guide**.
 
+## Telegram setup
+
+Notify staff with **your** bot (token + chat ID):
+
+- English: **[Telegram setup guide](docs/TELEGRAM.md)**
+- فارسی: **[راهنمای راه‌اندازی تلگرام](docs/TELEGRAM.fa.md)**
+
+In the app (from **0.12.0**): **Account → Advanced Settings → Integrations → Telegram** → **Telegram setup guide**.
+
 ## Try it on your phone
 
 ### Option A — download the APK (recommended)
