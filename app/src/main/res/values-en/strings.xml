@@ -183,4 +183,24 @@
     <string name="backup_failed">Backup failed</string>
     <string name="restore_failed">Restore failed</string>
     <string name="backup_no_account">No account selected</string>
+
+    <!-- Reports / PDF (Pen) -->
+    <string name="report_this_day">This day</string>
+    <string name="report_this_month">This month</string>
+    <string name="report_pick_day">Pick a day</string>
+    <string name="report_pick_month">Pick a month</string>
+    <string name="share">Share</string>
+    <string name="report_empty">No appointments in range</string>
+    <string name="report_range_day">Day</string>
+    <string name="report_range_month">Month</string>
+    <string name="report_col_time">Time</string>
+    <string name="report_col_client">Client</string>
+    <string name="report_col_staff">Staff</string>
+    <string name="report_col_note">Note</string>
+    <string name="report_selected">Range</string>
+    <string name="report_failed">Could not create PDF</string>
+    <string name="report_prev_month">Previous month</string>
+    <string name="report_next_month">Next month</string>
+    <string name="report_no_account">No account selected</string>
 </resources>
+

@@ -36,6 +36,12 @@ interface AppointmentDao {
     @Query("SELECT * FROM appointments WHERE accountId = :accountId ORDER BY day ASC, startMinute ASC")
     suspend fun allForAccount(accountId: Long): List<Appointment>
 
+    @Query(
+        "SELECT * FROM appointments WHERE accountId = :accountId AND day BETWEEN :start AND :end ORDER BY day ASC, startMinute ASC"
+    )
+    suspend fun between(accountId: Long, start: String, end: String): List<Appointment>
+
+
     @Query("SELECT * FROM appointments WHERE id = :id AND accountId = :accountId LIMIT 1")
     suspend fun get(accountId: Long, id: Long): Appointment?
 
