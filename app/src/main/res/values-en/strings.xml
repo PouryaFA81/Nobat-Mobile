@@ -252,5 +252,19 @@
     <string name="relay_topic">Topic</string>
     <string name="relay_token">Token</string>
 
-</resources>
+    <!-- Clinic dual path (v0.15.1) -->
+    <string name="your_own_relay">Your own relay</string>
+    <string name="relay_code">Relay code</string>
+    <string name="get_a_relay_code">Get a relay code</string>
+    <string name="i_have_a_code">I have a code</string>
+    <string name="redeem">Redeem</string>
+    <string name="invalid_or_expired_code">Invalid or expired code</string>
+    <string name="hosted_clinic_notifications">Hosted clinic notifications</string>
+    <string name="hosted_chip">Hosted</string>
+    <string name="choose_clinic_path">Choose how to connect</string>
+    <string name="save_and_create_clinic_code">Save &amp; create Clinic code</string>
+    <string name="relay_advanced">Relay advanced</string>
+    <string name="relay_purchase_url">Purchase / contact URL</string>
+    <string name="relay_purchase_url_unset">Set a purchase URL under Your own relay → Relay advanced first</string>
 
+</resources>

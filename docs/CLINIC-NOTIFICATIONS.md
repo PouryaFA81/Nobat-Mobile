@@ -4,6 +4,23 @@ Staff get **in-app** alerts for appointments assigned to them. Under the hood th
 
 Persian: [اعلان‌های مطب](CLINIC-NOTIFICATIONS.fa.md)
 
+
+## Dual path (from 0.15.1)
+
+Admin opens **Clinic code** and picks one path:
+
+1. **Relay code** (hosted) — paste a code → **Redeem**. Optionally **Get a relay code** opens the purchase/contact URL set under **Your own relay → Relay advanced** (`relay_purchase_url`; blank by default). After redeem, status shows **Hosted** and the UI **never shows the real host**. Share the generated **Clinic code** with staff as usual.
+2. **Your own relay** (advanced) — enter base URL · topic · token → **Save & create Clinic code** (same as 0.14.0).
+
+### Code formats
+
+| Prefix | Use |
+|--------|-----|
+| `nobat1:` + base64url(`{"u","t","k"}`) | Clinic code (share with staff) **or** a plain Relay code |
+| `nobatR1:` + same JSON | Optional hosted-purchase wrapper; redeem marks Hosted |
+
+Sellers who mint hosted codes do so **offline** — do not bake a real relay URL into the APK or repo. Use a placeholder like `https://example.com/relay` only in docs/settings hints.
+
 ## If you already use a notification relay
 
 You can keep using the **same host**. Create a **new topic** (and optionally a token limited to that topic) for Mobile only. Do not reuse topics other apps already publish to, and do not change unrelated Compose, ports, or TLS unless you intend to.
@@ -36,9 +53,9 @@ If authenticated clients may use any topic, you can skip ACL and just pick a **f
 ## 2. Admin phone (Nobat Mobile)
 
 1. Open **Account → Advanced Settings → Clinic code**  
-2. Enter **Relay** (advanced): base URL · topic · token — or generate/share the combined **Clinic code**  
-3. Status shows **Clinic notifications · Connected**  
-4. Share the **Clinic code** with staff (QR / copy). Use **Regenerate** if a code was leaked  
+2. Pick **Relay code** (paste → Redeem) **or** **Your own relay** (base URL · topic · token → Save & create Clinic code)  
+3. Status shows **Connected** (and **Hosted** if redeemed)  
+4. Share the **Clinic code** with staff. Use **Regenerate** on your-own-relay setups if a code was leaked; hosted path uses Disconnect to clear  
 
 When you book, cancel, or move with **Assign to**, the admin phone publishes to the topic; staff phones listening show a local notification.
 

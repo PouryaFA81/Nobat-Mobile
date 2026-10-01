@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-10-01
+
+### Added
+- **Clinic code dual path** / **دو مسیر کد مطب**: pick **Relay code** / **کد رله** (hosted) or **Your own relay** / **رلهٔ خودتان** (advanced)
+- Relay code path: paste → **Redeem** / **فعال‌سازی**; **Get a relay code** / **دریافت کد رله** opens admin-configured purchase URL (`relay_purchase_url`, default blank)
+- Optional `nobatR1:` Relay-code wrapper (same JSON as `nobat1:`); redeem marks **Hosted** / **میزبانی‌شده** and hides real host
+- Connected hosted: shareable Clinic code + Hosted chip; title **Hosted clinic notifications** / **اعلان‌های مطب میزبانی‌شده**
+- Admin Relay advanced: editable purchase / contact URL (placeholder `https://example.com/relay`)
+
+### Changed
+- versionName **0.15.1**, versionCode **21**
+
+### Notes
+- Do not bake a real relay host into the APK; sellers mint `nobat1:` / `nobatR1:` offline
+
 ## [0.15.0] - 2026-10-01
 
 ### Added
