@@ -1,6 +1,5 @@
 package app.nobat.mobile.data
 
-import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.security.PasswordHasher
 import app.nobat.mobile.session.AccountSession
 import kotlinx.coroutines.flow.Flow
@@ -10,7 +9,6 @@ class AccountRepository(
     private val appointments: AppointmentDao,
     private val personnel: PersonnelDao,
     private val session: AccountSession,
-    private val notificationStore: NotificationSettingsStore,
 ) {
     fun observeAccounts(): Flow<List<Account>> = accounts.observeAll()
 
@@ -32,6 +30,7 @@ class AccountRepository(
     /**
      * Create a local account. When [attachOrphans] is true (post-upgrade first account),
      * existing appointments with accountId=0 are reassigned to this account.
+     * Account password is for create / change-password only — day-to-day unlock is PIN/biometric.
      */
     suspend fun createAccount(
         displayName: String,
@@ -62,16 +61,6 @@ class AccountRepository(
         return Result.success(created)
     }
 
-    suspend fun signIn(accountId: Long, password: CharArray): Boolean {
-        val account = accounts.getById(accountId) ?: return false
-        val salt = PasswordHasher.decode(account.salt)
-        val expected = PasswordHasher.decode(account.passwordHash)
-        val ok = PasswordHasher.verify(password, salt, expected)
-        password.fill('\u0000')
-        if (ok) session.unlock(accountId)
-        return ok
-    }
-
     suspend fun changePassword(
         accountId: Long,
         currentPassword: CharArray,
@@ -100,23 +89,6 @@ class AccountRepository(
             ),
         )
         return true
-    }
-
-    /**
-     * Forgot-password reset: deletes the account and all of its appointments.
-     * Local-only; there is no recovery path.
-     */
-    suspend fun resetAccount(accountId: Long) {
-        appointments.deleteAllForAccount(accountId)
-        personnel.deleteAllForAccount(accountId)
-        accounts.delete(accountId)
-        notificationStore.clear(accountId)
-        if (session.unlockedAccountId.value == accountId) {
-            session.lock()
-        }
-        if (session.lastAccountId == accountId) {
-            session.lastAccountId = null
-        }
     }
 
     fun switchAccount() {

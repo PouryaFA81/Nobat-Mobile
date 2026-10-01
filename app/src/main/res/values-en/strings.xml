@@ -55,14 +55,11 @@
     <string name="confirm_password">Confirm password</string>
     <string name="local_only_note">Local only — data stays on this phone</string>
     <string name="wrong_password">Wrong password</string>
-    <string name="forgot_reset_note">Forgot? Reset removes this account’s data</string>
     <string name="change_password">Change password</string>
     <string name="current_password">Current password</string>
     <string name="new_password">New password</string>
     <string name="password_mismatch">Passwords do not match</string>
     <string name="password_changed">Password changed</string>
-    <string name="reset_account">Reset account</string>
-    <string name="confirm_reset_account">All appointments for this account will be deleted. Continue?</string>
     <string name="orphan_migration_title">Create an account</string>
     <string name="orphan_migration_body">We’ll attach previous appointments on this phone to your new account.</string>
     <string name="no_accounts_hint">No accounts yet. Create one.</string>
@@ -158,6 +155,12 @@
     <string name="delete">Delete</string>
     <string name="pin_mismatch">PINs do not match</string>
     <string name="pin_too_short">At least 4 digits</string>
+
+    <string name="lock_after">Lock after</string>
+    <string name="lock_after_5_min">5 minutes</string>
+    <string name="lock_after_30_min">30 minutes</string>
+    <string name="lock_after_1_hour">1 hour</string>
+    <string name="lock_after_phone_locks">When phone locks</string>
 
     <!-- Personnel (Pen) -->
     <string name="personnel_title">Personnel</string>

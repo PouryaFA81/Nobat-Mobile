@@ -20,7 +20,6 @@ class NobatApp : Application() {
             appointments = database.appointments(),
             personnel = database.personnel(),
             session = session,
-            notificationStore = notificationStore,
         )
     }
 

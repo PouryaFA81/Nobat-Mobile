@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -17,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -31,11 +33,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.nobat.mobile.R
 import app.nobat.mobile.security.AppLockStore
+import app.nobat.mobile.security.LockAfterOption
 import kotlinx.coroutines.launch
 
 @Composable
@@ -48,6 +52,7 @@ fun SecurityPane(
     val scope = rememberCoroutineScope()
     var pinEnabled by remember { mutableStateOf(store.isPinEnabled()) }
     var biometricEnabled by remember { mutableStateOf(store.isBiometricEnabled()) }
+    var lockAfter by remember { mutableStateOf(store.getLockAfter()) }
     var showSetPin by remember { mutableStateOf(false) }
     var showChangePin by remember { mutableStateOf(false) }
     var showDisablePin by remember { mutableStateOf(false) }
@@ -142,6 +147,50 @@ fun SecurityPane(
                 },
             )
         }
+        if (pinEnabled) {
+            HorizontalDivider()
+            Text(
+                text = stringResource(R.string.lock_after),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+            )
+            LockAfterOption.entries.forEach { option ->
+                val label = stringResource(
+                    when (option) {
+                        LockAfterOption.FIVE_MINUTES -> R.string.lock_after_5_min
+                        LockAfterOption.THIRTY_MINUTES -> R.string.lock_after_30_min
+                        LockAfterOption.ONE_HOUR -> R.string.lock_after_1_hour
+                        LockAfterOption.WHEN_PHONE_LOCKS -> R.string.lock_after_phone_locks
+                    },
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = lockAfter == option,
+                            onClick = {
+                                store.setLockAfter(option)
+                                lockAfter = option
+                                scope.launch { snackbar.showSnackbar(savedMsg) }
+                            },
+                            role = Role.RadioButton,
+                        )
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = lockAfter == option,
+                        onClick = null,
+                    )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(start = 12.dp),
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(16.dp))
     }
 
@@ -155,6 +204,7 @@ fun SecurityPane(
                 if (ok) {
                     pinEnabled = true
                     biometricEnabled = store.isBiometricEnabled()
+                    lockAfter = store.getLockAfter()
                     store.markUnlocked()
                     showSetPin = false
                     scope.launch { snackbar.showSnackbar(savedMsg) }
