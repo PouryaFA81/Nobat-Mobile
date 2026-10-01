@@ -85,12 +85,13 @@
     <string name="smtp_username">نام کاربری</string>
     <string name="smtp_password">رمز</string>
     <string name="smtp_from">فرستنده</string>
-    <string name="smtp_use_tls">TLS/SSL</string>
+    <string name="smtp_use_tls">استفاده از TLS</string>
     <string name="test_send">ارسال آزمایشی</string>
-    <string name="test_recipient">گیرنده آزمایشی</string>
+    <string name="test_recipient">گیرندهٔ آزمایشی</string>
     <string name="sms_section">پیامک</string>
     <string name="sms_send_via_device">ارسال با گوشی</string>
     <string name="reminders_on">یادآوری فعال</string>
+    <string name="notifications_save">ذخیره</string>
     <string name="saved">ذخیره شد</string>
     <string name="send_failed">ارسال ناموفق</string>
     <string name="send_ok">ارسال شد</string>

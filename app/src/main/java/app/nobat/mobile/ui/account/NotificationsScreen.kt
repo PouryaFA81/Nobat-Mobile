@@ -215,7 +215,7 @@ fun NotificationsPane(
                 .fillMaxWidth()
                 .height(48.dp),
         ) {
-            Text(stringResource(R.string.save))
+            Text(stringResource(R.string.notifications_save))
         }
 
         OutlinedButton(
