@@ -130,6 +130,7 @@
     <string name="telegram">تلگرام</string>
     <string name="bale">بله</string>
     <string name="google_drive">گوگل درایو</string>
+    <string name="google_calendar">تقویم گوگل</string>
     <string name="bot_token">توکن ربات</string>
     <string name="connect">اتصال</string>
     <string name="data">داده</string>
