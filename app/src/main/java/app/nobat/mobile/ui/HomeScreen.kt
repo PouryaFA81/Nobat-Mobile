@@ -126,6 +126,7 @@ import app.nobat.mobile.ui.account.PersonnelPane
 import app.nobat.mobile.ui.security.SecurityPane
 import app.nobat.mobile.ui.security.UnlockGatePane
 import app.nobat.mobile.ui.shell.BackupPane
+import app.nobat.mobile.ui.clinic.ClinicCodePane
 import app.nobat.mobile.ui.shell.IntegrationsPane
 import app.nobat.mobile.ui.shell.ReportsPane
 import app.nobat.mobile.update.UpdateChecker
@@ -152,6 +153,7 @@ private enum class AppScreen {
     Integrations,
     Backup,
     Reports,
+    ClinicCode,
 }
 
 private fun AppScreen.isSensitive(): Boolean = this in setOf(
@@ -165,6 +167,7 @@ private fun AppScreen.isSensitive(): Boolean = this in setOf(
     AppScreen.Integrations,
     AppScreen.Backup,
     AppScreen.Reports,
+    AppScreen.ClinicCode,
 )
 
 private fun AppScreen.isAuthFlow(): Boolean = this in setOf(
@@ -188,6 +191,7 @@ fun HomeScreen(
             session = app.session,
             notificationStore = app.notificationStore,
             telegramStore = app.telegramStore,
+            clinicStore = app.clinicStore,
         ),
     ),
 ) {
@@ -487,6 +491,18 @@ fun HomeScreen(
                     },
                     colors = topBarColors(),
                 )
+                AppScreen.ClinicCode -> TopAppBar(
+                    title = { Text(stringResource(R.string.clinic_code)) },
+                    navigationIcon = {
+                        IconButton(onClick = { screen = AppScreen.Account }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
+                    },
+                    colors = topBarColors(),
+                )
             }
         },
         snackbarHost = { SnackbarHost(snackbar) },
@@ -649,6 +665,7 @@ fun HomeScreen(
                 onPassword = { showChangePassword = true },
                 onRole = { showRolePicker = true },
                 onLinkPersonnel = { showLinkPersonnel = true },
+                onClinicCode = { screen = AppScreen.ClinicCode },
                 onSwitch = {
                     vm.switchAccount()
                     screen = AppScreen.Entry
@@ -743,6 +760,22 @@ fun HomeScreen(
                     .fillMaxSize()
                     .padding(padding),
             )
+            AppScreen.ClinicCode -> {
+                val aid = unlockedId
+                if (aid == null) {
+                    LaunchedEffect(Unit) { screen = AppScreen.Entry }
+                } else {
+                    ClinicCodePane(
+                        accountId = aid,
+                        role = unlockedAccount?.role ?: AccountRole.ADMIN,
+                        store = app.clinicStore,
+                        snackbar = snackbar,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding),
+                    )
+                }
+            }
         }
     }
 
@@ -1183,6 +1216,7 @@ private fun AccountPane(
     onPassword: () -> Unit,
     onRole: () -> Unit,
     onLinkPersonnel: () -> Unit,
+    onClinicCode: () -> Unit,
     onSwitch: () -> Unit,
     onAddAccount: () -> Unit,
     onLanguage: () -> Unit,
@@ -1239,9 +1273,8 @@ private fun AccountPane(
         AccountRow(
             icon = { Icon(Icons.Outlined.QrCode, contentDescription = null) },
             title = stringResource(R.string.clinic_code),
-            subtitle = stringResource(R.string.coming_soon),
-            onClick = {},
-            enabled = false,
+            subtitle = null,
+            onClick = onClinicCode,
         )
         HorizontalDivider()
         AccountRow(

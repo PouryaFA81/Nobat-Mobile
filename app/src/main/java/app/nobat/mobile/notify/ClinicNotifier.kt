@@ -9,7 +9,7 @@ import androidx.core.app.NotificationManagerCompat
 import app.nobat.mobile.R
 
 /**
- * Local in-app notifications on this device for book + cancel (Phase 1 — no ntfy/relay).
+ * In-app NotificationCompat for book + cancel (local + clinic relay).
  */
 object ClinicNotifier {
     const val CHANNEL_ID = "clinic_notifications"
