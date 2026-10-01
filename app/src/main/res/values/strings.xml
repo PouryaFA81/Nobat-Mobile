@@ -7,6 +7,10 @@
     <string name="nav_calendar">تقویم</string>
     <string name="nav_add">افزودن</string>
     <string name="account_title">حساب</string>
+    <string name="section_account_management">مدیریت حساب</string>
+    <string name="section_preferences">ترجیحات</string>
+    <string name="section_advanced_settings">تنظیمات پیشرفته</string>
+    <string name="section_about">درباره</string>
     <string name="appearance">ظاهر</string>
     <string name="theme">پوسته</string>
     <string name="coming_soon">به‌زودی</string>

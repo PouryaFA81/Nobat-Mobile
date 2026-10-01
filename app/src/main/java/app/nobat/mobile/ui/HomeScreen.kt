@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -1164,7 +1166,11 @@ private fun AccountPane(
 ) {
     val context = LocalContext.current
     val dark = ThemePrefs.isDark(context)
-    Column(modifier = modifier.padding(vertical = 8.dp)) {
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 8.dp),
+    ) {
         if (!displayName.isNullOrBlank()) {
             Text(
                 text = displayName,
@@ -1173,6 +1179,8 @@ private fun AccountPane(
             )
             HorizontalDivider()
         }
+
+        AccountSectionHeader(stringResource(R.string.section_account_management))
         AccountRow(
             icon = { Icon(Icons.Outlined.Lock, contentDescription = null) },
             title = stringResource(R.string.password),
@@ -1194,6 +1202,14 @@ private fun AccountPane(
             onClick = onAddAccount,
         )
         HorizontalDivider()
+        AccountRow(
+            icon = { Icon(Icons.Outlined.Security, contentDescription = null) },
+            title = stringResource(R.string.security),
+            subtitle = stringResource(R.string.app_lock),
+            onClick = onSecurity,
+        )
+
+        AccountSectionHeader(stringResource(R.string.section_preferences))
         AccountRow(
             icon = { Icon(Icons.Outlined.Language, contentDescription = null) },
             title = stringResource(R.string.language_label),
@@ -1227,14 +1243,8 @@ private fun AccountPane(
             subtitle = null,
             onClick = onNotifications,
         )
-        HorizontalDivider()
-        AccountRow(
-            icon = { Icon(Icons.Outlined.Security, contentDescription = null) },
-            title = stringResource(R.string.security),
-            subtitle = stringResource(R.string.app_lock),
-            onClick = onSecurity,
-        )
-        HorizontalDivider()
+
+        AccountSectionHeader(stringResource(R.string.section_advanced_settings))
         AccountRow(
             icon = { Icon(Icons.Outlined.IntegrationInstructions, contentDescription = null) },
             title = stringResource(R.string.integrations),
@@ -1255,7 +1265,8 @@ private fun AccountPane(
             subtitle = stringResource(R.string.coming_soon),
             onClick = onReports,
         )
-        HorizontalDivider()
+
+        AccountSectionHeader(stringResource(R.string.section_about))
         AccountRow(
             icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
             title = stringResource(R.string.about),
@@ -1263,6 +1274,16 @@ private fun AccountPane(
             onClick = onAbout,
         )
     }
+}
+
+@Composable
+private fun AccountSectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+    )
 }
 
 
