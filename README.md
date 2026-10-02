@@ -37,8 +37,8 @@ If you already self-host the original [Nobat](https://github.com/PouryaFA81/Noba
 - **About** — Version, check for updates, GitHub contact links  
 - **Local Backup & Restore** — Advanced Settings → Backup: save this account’s data to Downloads; restore from a file with a confirm dialog  
 - **Reports & Print PDF** — Advanced Settings → Reports: day/month range; on-device PDF; Share / Print  
-- **Telegram** — Integrations: your bot token + chat ID; Test send; optional notify on book (staff name + appointment in message)  
-- **Bale** — Integrations: your Bale bot token + chat ID; Test send; optional notify on book / move / evening digest (staff notify via official `tapi.bale.ai`)  
+- **Telegram** — Integrations: your bot token + chat ID; Test send; optional notify on book/move/cancel (staff; Jalali dates in Persian)  
+- **Bale** — Integrations: your Bale bot token + chat ID; Test send; optional notify on book / move / cancel / evening digest (staff notify via official `tapi.bale.ai`; Jalali dates in Persian)  
 - **Role & My schedule** — Admin / Secretary or Staff; link to personnel; Admin Everyone + My schedule tabs; Staff My schedule only (no FAB); local notify on book/cancel/move  
 - **Clinic notifications** — Dual path: **Relay code** (hosted Redeem) or **Your own relay**; own-relay Share embeds `nobat1:` host/topic/token; **hosted Share** is opaque `nobatH1:` only (no relay address); Staff paste → Connect (full `nobat1:` / `nobatR1:` today; opaque pending future resolve); Hosted chip hides real host; in-app alerts for assigned book/cancel/move  
 - **Coming soon (shells)** — Google Drive, Google Calendar, Drive backup  
