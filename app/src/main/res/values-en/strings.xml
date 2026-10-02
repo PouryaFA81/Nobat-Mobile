@@ -111,7 +111,7 @@
     <string name="evening_digest_on">Send evening digest</string>
     <string name="digest_time">Digest time</string>
     <string name="digest_via_email">Email (SMTP)</string>
-    <string name="digest_also_channels">Also sends via Telegram, Clinic, and local when those are on.</string>
+    <string name="digest_also_channels">Also sends via Telegram, Bale, Clinic, and local when those are on.</string>
     <string name="digest_empty">No appointments tomorrow</string>
     <string name="digest_subject">Tomorrow’s schedule — %1$s</string>
     <string name="digest_header">Appointments for %1$s</string>
@@ -152,6 +152,9 @@
     <string name="telegram_setup_guide">Telegram setup guide</string>
     <string name="telegram_test_body">This is a test message from Nobat Mobile.</string>
     <string name="telegram_book_message">Appointment saved: %1$s — %2$s at %3$s (%4$d min) · Staff: %5$s</string>
+    <string name="bale_setup_guide">Bale setup guide</string>
+    <string name="bale_test_body">This is a test message from Nobat Mobile.</string>
+    <string name="bale_book_message">Appointment saved: %1$s — %2$s at %3$s (%4$d min) · Staff: %5$s</string>
     <string name="connect">Connect</string>
     <string name="data">Data</string>
     <string name="backup">Backup</string>
@@ -250,6 +253,7 @@
     <string name="move_email_subject">Appointment moved: %1$s</string>
     <string name="move_email_body">Appointment moved: %1$s — %2$s at %3$s (%4$d min)</string>
     <string name="telegram_move_message">Appointment moved: %1$s — %2$s at %3$s (%4$d min) · Staff: %5$s</string>
+    <string name="bale_move_message">Appointment moved: %1$s — %2$s at %3$s (%4$d min) · Staff: %5$s</string>
 
     <string name="not_linked">Not linked</string>
 

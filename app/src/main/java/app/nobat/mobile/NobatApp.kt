@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import app.nobat.mobile.notify.TelegramSettingsStore
+import app.nobat.mobile.notify.BaleSettingsStore
 import app.nobat.mobile.security.AppLockStore
 import app.nobat.mobile.session.AccountSession
 import app.nobat.mobile.ui.theme.ThemePrefs
@@ -22,6 +23,7 @@ class NobatApp : Application() {
     val session: AccountSession by lazy { AccountSession(this) }
     val notificationStore: NotificationSettingsStore by lazy { NotificationSettingsStore(this) }
     val telegramStore: TelegramSettingsStore by lazy { TelegramSettingsStore(this) }
+    val baleStore: BaleSettingsStore by lazy { BaleSettingsStore(this) }
     val clinicStore: ClinicSettingsStore by lazy { ClinicSettingsStore(this) }
     val appLock: AppLockStore by lazy { AppLockStore(this) }
     val accounts: AccountRepository by lazy {

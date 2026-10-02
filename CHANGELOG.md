@@ -5,6 +5,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-10-02
+
+### Added
+- **Bale** staff notify under Integrations (mirror of Telegram): bot token · chat ID · Notify on book · Connect/Save · Test send · setup-guide row
+- Encrypted store for Bale token/chat ID (SecurePrefs; no plaintext fallback; surfaces `secure_storage_failed`)
+- Notify paths: book, move, evening digest (same gate as Telegram — Notify on book + configured)
+- Setup guides: `docs/BALE.md` + `docs/BALE.fa.md` (official `https://tapi.bale.ai/bot<token>/…`)
+
+### Changed
+- Removed Bale “Coming soon” shell; Drive / Google Calendar stay shells
+- Evening digest idempotency includes a Bale channel marker
+- versionName **0.17.0**, versionCode **24**
+
+### Notes
+- Pen may polish Bale FA/EN guide prose on this branch after PR open
+- API base per official docs: [docs.bale.ai](https://docs.bale.ai/) → `https://tapi.bale.ai/botTOKEN/METHOD`
+
 ## [0.16.1] - 2026-10-02
 
 ### Fixed

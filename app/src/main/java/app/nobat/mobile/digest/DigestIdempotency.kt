@@ -7,12 +7,14 @@ package app.nobat.mobile.digest
 data class DigestSentState(
     val local: Boolean = false,
     val telegram: Boolean = false,
+    val bale: Boolean = false,
     val clinic: Boolean = false,
     /** Lowercased emails already delivered for this slot (SMTP may be multi-recipient). */
     val smtpEmails: Set<String> = emptySet(),
 ) {
     fun withLocal() = copy(local = true)
     fun withTelegram() = copy(telegram = true)
+    fun withBale() = copy(bale = true)
     fun withClinic() = copy(clinic = true)
     fun withSmtpEmail(email: String): DigestSentState {
         val key = email.trim().lowercase()
@@ -31,6 +33,7 @@ object DigestIdempotency {
 
     fun shouldSendLocal(state: DigestSentState): Boolean = !state.local
     fun shouldSendTelegram(state: DigestSentState): Boolean = !state.telegram
+    fun shouldSendBale(state: DigestSentState): Boolean = !state.bale
     fun shouldSendClinic(state: DigestSentState): Boolean = !state.clinic
     fun shouldSendSmtp(state: DigestSentState, email: String): Boolean =
         !state.smtpAlreadySent(email)
