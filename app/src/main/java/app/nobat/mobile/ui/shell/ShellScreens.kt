@@ -89,6 +89,7 @@ fun IntegrationsPane(
     val scope = rememberCoroutineScope()
     val soon = stringResource(R.string.coming_soon)
     val savedMsg = stringResource(R.string.saved)
+    val secureStorageFailedMsg = stringResource(R.string.secure_storage_failed)
     val sendOkMsg = stringResource(R.string.send_ok)
     val failedMsg = stringResource(R.string.send_failed)
     val testBody = stringResource(R.string.telegram_test_body)
@@ -227,9 +228,11 @@ fun IntegrationsPane(
                         if (saving || accountId <= 0L) return@Button
                         saving = true
                         scope.launch {
-                            telegramStore.save(accountId, currentSettings())
+                            val saved = telegramStore.save(accountId, currentSettings())
                             saving = false
-                            snackbar.showSnackbar(savedMsg)
+                            snackbar.showSnackbar(
+                                if (saved.isSuccess) savedMsg else secureStorageFailedMsg,
+                            )
                         }
                     },
                     enabled = !saving && !testing && accountId > 0L,
@@ -244,8 +247,13 @@ fun IntegrationsPane(
                         if (testing || accountId <= 0L) return@OutlinedButton
                         testing = true
                         scope.launch {
-                            telegramStore.save(accountId, currentSettings())
                             val s = currentSettings()
+                            val saved = telegramStore.save(accountId, s)
+                            if (saved.isFailure) {
+                                testing = false
+                                snackbar.showSnackbar(secureStorageFailedMsg)
+                                return@launch
+                            }
                             val result = TelegramClient.sendMessage(
                                 botToken = s.botToken,
                                 chatId = s.chatId,

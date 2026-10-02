@@ -88,6 +88,7 @@ fun NotificationsPane(
     val testBody = stringResource(R.string.smtp_test_body)
     val minutesSuffix = stringResource(R.string.minutes_suffix)
     val digestNeedsSmtpMsg = stringResource(R.string.digest_needs_smtp)
+    val secureStorageFailedMsg = stringResource(R.string.secure_storage_failed)
 
     LaunchedEffect(accountId) {
         val s = store.load(accountId)
@@ -188,7 +189,7 @@ fun NotificationsPane(
             placeholder = { Text("20:00") },
         )
         Text(
-            text = stringResource(R.string.digest_via_email),
+            text = stringResource(R.string.digest_also_channels),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -295,22 +296,20 @@ fun NotificationsPane(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Text(
-            text = stringResource(R.string.send_confirmation_now),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
         Button(
             onClick = {
                 if (saving) return@Button
                 saving = true
                 scope.launch {
                     val s = currentSettings()
-                    store.save(accountId, s)
+                    val saved = store.save(accountId, s)
+                    saving = false
+                    if (saved.isFailure) {
+                        snackbar.showSnackbar(secureStorageFailedMsg)
+                        return@launch
+                    }
                     EveningDigestScheduler.schedule(context, accountId, s)
                     onSettingsSaved()
-                    saving = false
                     if (s.eveningDigestOn && !ReminderScheduler.isSmtpConfigured(s)) {
                         snackbar.showSnackbar(digestNeedsSmtpMsg)
                     } else {
@@ -331,8 +330,13 @@ fun NotificationsPane(
                 if (testing) return@OutlinedButton
                 testing = true
                 scope.launch {
-                    store.save(accountId, currentSettings())
                     val s = currentSettings()
+                    val saved = store.save(accountId, s)
+                    if (saved.isFailure) {
+                        testing = false
+                        snackbar.showSnackbar(secureStorageFailedMsg)
+                        return@launch
+                    }
                     val result = SmtpClient.send(
                         SmtpClient.MailRequest(
                             host = s.smtpHost,

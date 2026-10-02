@@ -13,8 +13,8 @@ android {
         applicationId = "app.nobat.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 22
-        versionName = "0.16.0"
+        versionCode = 23
+        versionName = "0.16.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -85,5 +85,6 @@ dependencies {
 
     // App lock biometric
     implementation("androidx.biometric:biometric:1.1.0")
-}
 
+    testImplementation("junit:junit:4.13.2")
+}

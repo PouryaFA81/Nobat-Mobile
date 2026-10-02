@@ -111,6 +111,7 @@
     <string name="evening_digest_on">ارسال خلاصهٔ شامگاهی</string>
     <string name="digest_time">زمان خلاصه</string>
     <string name="digest_via_email">ایمیل (SMTP)</string>
+    <string name="digest_also_channels">در صورت فعال بودن، تلگرام، اعلان مطب و اعلان محلی هم ارسال می‌شود.</string>
     <string name="digest_empty">فردا نوبتی نیست</string>
     <string name="digest_subject">برنامهٔ فردا — %1$s</string>
     <string name="digest_header">نوبت‌های %1$s</string>
@@ -118,10 +119,9 @@
     <string name="digest_sent">خلاصه ارسال شد</string>
     <string name="digest_needs_smtp">اول SMTP را تنظیم کنید</string>
 
-    <string name="send_confirmation_now">همین حالا تأیید بفرست</string>
     <string name="reminder_scheduled">یادآوری زمان‌بندی شد</string>
-    <string name="confirmation_sent">تأیید ارسال شد</string>
-    <string name="confirmation_failed">تأیید ارسال نشد</string>
+    <string name="confirmation_sent">به پرسنل اطلاع داده شد</string>
+    <string name="confirmation_failed">اطلاع به پرسنل انجام نشد</string>
     <string name="setup_smtp_first">اول SMTP را تنظیم کنید</string>
     <string name="set_recipient">گیرنده را تنظیم کنید</string>
     <string name="theme_dark">تیره</string>
@@ -131,7 +131,7 @@
     <string name="reminder_recipient">گیرندهٔ یادآوری</string>
     <string name="reminder_email_subject">یادآوری نوبت: %1$s</string>
     <string name="reminder_email_body">یادآوری نوبت: %1$s — %2$s ساعت %3$s (%4$d دقیقه)</string>
-    <string name="confirmation_email_subject">تأیید نوبت: %1$s</string>
+    <string name="confirmation_email_subject">نوبت ثبت شد: %1$s</string>
     <string name="confirmation_email_body">نوبت ثبت شد: %1$s — %2$s ساعت %3$s (%4$d دقیقه)</string>
 
     <!-- Security / shells (Pen) -->
@@ -240,10 +240,12 @@
     <string name="move_appointment">جابه‌جایی</string>
     <string name="move_title">تغییر زمان</string>
     <string name="reschedule">تغییر زمان</string>
-    <string name="new_time">زمان جدید</string>
+    <string name="save_move">ثبت جابه‌جایی</string>
+    <string name="new_time">ساعت جدید</string>
     <string name="new_date">تاریخ جدید</string>
     <string name="pick_new_date">انتخاب تاریخ</string>
     <string name="moved_toast">نوبت جابه‌جا شد</string>
+    <string name="move_failed">جابه‌جایی انجام نشد</string>
     <string name="notif_appointment_moved">نوبت جابه‌جا شد</string>
     <string name="move_email_subject">جابه‌جایی نوبت: %1$s</string>
     <string name="move_email_body">نوبت جابه‌جا شد: %1$s — %2$s ساعت %3$s (%4$d دقیقه)</string>
@@ -279,5 +281,8 @@
     <string name="relay_advanced">رله — پیشرفته</string>
     <string name="relay_purchase_url">آدرس خرید / تماس</string>
     <string name="relay_purchase_url_unset">ابتدا در رلهٔ خودتان → رله — پیشرفته یک آدرس خرید تنظیم کنید</string>
+    <string name="hosted_clinic_code">کد مطب (میزبانی‌شده)</string>
+    <string name="hosted_code_hint">این کد را با پرسنل به اشتراک بگذارید. آدرس رله در آن نیست.</string>
+    <string name="secure_storage_failed">فضای امن در دسترس نیست. اطلاعات ذخیره نشد.</string>
 
 </resources>

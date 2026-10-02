@@ -64,6 +64,7 @@ fun SecurityPane(
     }
 
     val savedMsg = stringResource(R.string.saved)
+    val secureStorageFailedMsg = stringResource(R.string.secure_storage_failed)
     val wrongPin = stringResource(R.string.wrong_pin)
     val bioUnavailable = stringResource(R.string.biometric_unavailable)
 
@@ -141,7 +142,10 @@ fun SecurityPane(
                         scope.launch { snackbar.showSnackbar(bioUnavailable) }
                         return@Switch
                     }
-                    store.setBiometricEnabled(on)
+                    if (!store.setBiometricEnabled(on)) {
+                        scope.launch { snackbar.showSnackbar(secureStorageFailedMsg) }
+                        return@Switch
+                    }
                     biometricEnabled = store.isBiometricEnabled()
                     scope.launch { snackbar.showSnackbar(savedMsg) }
                 },
@@ -170,7 +174,10 @@ fun SecurityPane(
                         .selectable(
                             selected = lockAfter == option,
                             onClick = {
-                                store.setLockAfter(option)
+                                if (!store.setLockAfter(option)) {
+                                    scope.launch { snackbar.showSnackbar(secureStorageFailedMsg) }
+                                    return@selectable
+                                }
                                 lockAfter = option
                                 scope.launch { snackbar.showSnackbar(savedMsg) }
                             },
@@ -200,6 +207,10 @@ fun SecurityPane(
             requireCurrent = false,
             onDismiss = { showSetPin = false },
             onConfirm = { _, newPin ->
+                if (!store.isSecureStorageAvailable()) {
+                    scope.launch { snackbar.showSnackbar(secureStorageFailedMsg) }
+                    return@PinSetupDialog false
+                }
                 val ok = store.setPin(newPin)
                 if (ok) {
                     pinEnabled = true
