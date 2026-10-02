@@ -20,6 +20,7 @@ class DigestSentStore(context: Context) {
         return DigestSentState(
             local = prefs.getBoolean(p + KEY_LOCAL, false),
             telegram = prefs.getBoolean(p + KEY_TELEGRAM, false),
+            bale = prefs.getBoolean(p + KEY_BALE, false),
             clinic = prefs.getBoolean(p + KEY_CLINIC, false),
             smtpEmails = emails,
         )
@@ -30,6 +31,7 @@ class DigestSentStore(context: Context) {
         prefs.edit()
             .putBoolean(p + KEY_LOCAL, state.local)
             .putBoolean(p + KEY_TELEGRAM, state.telegram)
+            .putBoolean(p + KEY_BALE, state.bale)
             .putBoolean(p + KEY_CLINIC, state.clinic)
             .putString(p + KEY_SMTP_EMAILS, state.smtpEmails.joinToString("\u001e"))
             .apply()
@@ -44,6 +46,7 @@ class DigestSentStore(context: Context) {
         private const val PREFS_NAME = "nobat_digest_sent"
         private const val KEY_LOCAL = "local"
         private const val KEY_TELEGRAM = "telegram"
+        private const val KEY_BALE = "bale"
         private const val KEY_CLINIC = "clinic"
         private const val KEY_SMTP_EMAILS = "smtp_emails"
     }

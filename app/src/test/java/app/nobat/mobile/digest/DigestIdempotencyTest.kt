@@ -27,12 +27,17 @@ class DigestIdempotencyTest {
         var state = DigestSentState()
         assertTrue(DigestIdempotency.shouldSendLocal(state))
         assertTrue(DigestIdempotency.shouldSendTelegram(state))
+        assertTrue(DigestIdempotency.shouldSendBale(state))
         assertTrue(DigestIdempotency.shouldSendClinic(state))
 
         state = state.withTelegram()
         assertFalse(DigestIdempotency.shouldSendTelegram(state))
+        assertTrue(DigestIdempotency.shouldSendBale(state))
         assertTrue(DigestIdempotency.shouldSendLocal(state))
         assertTrue(DigestIdempotency.shouldSendClinic(state))
+
+        state = state.withBale()
+        assertFalse(DigestIdempotency.shouldSendBale(state))
 
         state = state.withLocal().withClinic()
         assertFalse(DigestIdempotency.shouldSendLocal(state))
@@ -50,14 +55,16 @@ class DigestIdempotencyTest {
 
     @Test
     fun smtpFailThenRetry_doesNotResendSucceededChannels() {
-        // Simulate: local+telegram ok, smtp failed for one recipient.
+        // Simulate: local+telegram+bale ok, smtp failed for one recipient.
         var state = DigestSentState()
             .withLocal()
             .withTelegram()
+            .withBale()
             .withSmtpEmail("ok@example.com")
 
         assertFalse(DigestIdempotency.shouldSendLocal(state))
         assertFalse(DigestIdempotency.shouldSendTelegram(state))
+        assertFalse(DigestIdempotency.shouldSendBale(state))
         assertFalse(DigestIdempotency.shouldSendSmtp(state, "ok@example.com"))
         assertTrue(DigestIdempotency.shouldSendSmtp(state, "fail@example.com"))
         assertTrue(DigestIdempotency.shouldSendClinic(state))

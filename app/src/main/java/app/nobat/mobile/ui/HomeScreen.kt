@@ -192,6 +192,7 @@ fun HomeScreen(
             session = app.session,
             notificationStore = app.notificationStore,
             telegramStore = app.telegramStore,
+            baleStore = app.baleStore,
             clinicStore = app.clinicStore,
         ),
     ),
@@ -748,6 +749,7 @@ fun HomeScreen(
                 snackbar = snackbar,
                 accountId = unlockedId ?: 0L,
                 telegramStore = app.telegramStore,
+                baleStore = app.baleStore,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

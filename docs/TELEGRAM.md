@@ -59,7 +59,7 @@ Token and chat ID stay **on this phone**, for the local account you’re using.
 
 - If **Test send** fails, check the token, that you started the bot chat, and that the chat ID matches  
 - For staff who don’t use Telegram yet, keep **SMTP** on as the main path  
-- **Bale** will use a similar form later  
+- **Bale** uses the same Integrations form (from **0.17.0**)  
 
 ## Need help?
 

@@ -10,16 +10,17 @@ import app.nobat.mobile.notify.ClinicNotifier
 import app.nobat.mobile.notify.ClinicRelayClient
 import app.nobat.mobile.notify.SmtpClient
 import app.nobat.mobile.notify.TelegramClient
+import app.nobat.mobile.notify.BaleClient
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 /**
- * Builds tomorrow’s schedule digest: SMTP per personnel, optional Telegram,
+ * Builds tomorrow’s schedule digest: SMTP per personnel, optional Telegram / Bale,
  * Clinic relay event=digest, and a local notification. Then reschedules the next day.
  *
  * Per-channel idempotency: WorkManager retries skip channels already marked sent
  * for this fire-day + digest time slot (e.g. SMTP fail must not re-send Telegram).
- * Never logs SMTP / Telegram / relay secrets.
+ * Never logs SMTP / Telegram / Bale / relay secrets.
  */
 class EveningDigestWorker(
     appContext: Context,
@@ -65,10 +66,23 @@ class EveningDigestWorker(
         // Telegram: one message when Notify on book is configured.
         val tg = app.telegramStore.load(accountId)
         if (tg.notifyOnBook && tg.isConfigured() && DigestIdempotency.shouldSendTelegram(state)) {
-            val tgBody = buildTelegramBody(dayIso, all)
+            val tgBody = buildMessengerBody(dayIso, all)
             val tgResult = TelegramClient.sendMessage(tg.botToken, tg.chatId, tgBody)
             if (tgResult.isSuccess) {
                 state = state.withTelegram()
+                sentStore.save(accountId, fireDay, hour, minute, state)
+            } else {
+                anyHardFailure = true
+            }
+        }
+
+        // Bale: same gate as Telegram (Notify on book + configured).
+        val bale = app.baleStore.load(accountId)
+        if (bale.notifyOnBook && bale.isConfigured() && DigestIdempotency.shouldSendBale(state)) {
+            val baleBody = buildMessengerBody(dayIso, all)
+            val baleResult = BaleClient.sendMessage(bale.botToken, bale.chatId, baleBody)
+            if (baleResult.isSuccess) {
+                state = state.withBale()
                 sentStore.save(accountId, fireDay, hour, minute, state)
             } else {
                 anyHardFailure = true
@@ -157,7 +171,7 @@ class EveningDigestWorker(
         return "$header\n$lines"
     }
 
-    private fun buildTelegramBody(dayIso: String, slots: List<Appointment>): String {
+    private fun buildMessengerBody(dayIso: String, slots: List<Appointment>): String {
         val header = applicationContext.getString(R.string.digest_header, dayIso)
         if (slots.isEmpty()) {
             return header + "\n" + applicationContext.getString(R.string.digest_empty)

@@ -20,6 +20,8 @@ import app.nobat.mobile.notify.ClinicSettingsStore
 import app.nobat.mobile.notify.NotificationSettingsStore
 import app.nobat.mobile.notify.SmtpClient
 import app.nobat.mobile.notify.TelegramClient
+import app.nobat.mobile.notify.BaleClient
+import app.nobat.mobile.notify.BaleSettingsStore
 import app.nobat.mobile.notify.TelegramSettingsStore
 import app.nobat.mobile.digest.EveningDigestScheduler
 import app.nobat.mobile.remind.ReminderScheduler
@@ -53,6 +55,7 @@ class HomeViewModel(
     private val session: AccountSession,
     private val notificationStore: NotificationSettingsStore,
     private val telegramStore: TelegramSettingsStore,
+    private val baleStore: BaleSettingsStore,
     private val clinicStore: ClinicSettingsStore,
 ) : AndroidViewModel(app) {
     private val dayFmt = DateTimeFormatter.ISO_LOCAL_DATE
@@ -342,6 +345,21 @@ class HomeViewModel(
             TelegramClient.sendMessage(tg.botToken, tg.chatId, tgText)
         }
 
+        // Bale notify-on-book (same gate as Telegram).
+        val bale = baleStore.load(accountId)
+        if (bale.notifyOnBook && bale.isConfigured()) {
+            val time = "%02d:%02d".format(saved.startMinute / 60, saved.startMinute % 60)
+            val baleText = appContext.getString(
+                R.string.bale_book_message,
+                saved.initials,
+                saved.day,
+                time,
+                saved.durationMin,
+                person.name,
+            )
+            BaleClient.sendMessage(bale.botToken, bale.chatId, baleText)
+        }
+
         // Local in-app notification on this device (Phase 1).
         val time = "%02d:%02d".format(saved.startMinute / 60, saved.startMinute % 60)
         ClinicNotifier.notifyBooked(appContext, saved.initials, saved.day, time)
@@ -414,7 +432,7 @@ class HomeViewModel(
     /**
      * Move / reschedule an appointment: new day and/or time; keep assign/notes
      * (editable). Admin/Secretary only. Cancels old 1h reminder and schedules a new one.
-     * Notifies like book: SMTP confirmation-style, Telegram if Notify on book, local
+     * Notifies like book: SMTP confirmation-style, Telegram/Bale if Notify on book, local
      * in-app, clinic relay event=move.
      */
     suspend fun move(
@@ -511,6 +529,21 @@ class HomeViewModel(
                 person.name,
             )
             TelegramClient.sendMessage(tg.botToken, tg.chatId, tgText)
+        }
+
+        // Reuse Bale "Notify on book" toggle for move as well.
+        val bale = baleStore.load(accountId)
+        if (bale.notifyOnBook && bale.isConfigured()) {
+            val time = "%02d:%02d".format(updated.startMinute / 60, updated.startMinute % 60)
+            val baleText = appContext.getString(
+                R.string.bale_move_message,
+                updated.initials,
+                updated.day,
+                time,
+                updated.durationMin,
+                person.name,
+            )
+            BaleClient.sendMessage(bale.botToken, bale.chatId, baleText)
         }
 
         val time = "%02d:%02d".format(updated.startMinute / 60, updated.startMinute % 60)
@@ -674,10 +707,11 @@ class HomeViewModel(
         private val session: AccountSession,
         private val notificationStore: NotificationSettingsStore,
         private val telegramStore: TelegramSettingsStore,
+        private val baleStore: BaleSettingsStore,
         private val clinicStore: ClinicSettingsStore,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T =
-            HomeViewModel(app, dao, personnelDao, accountRepo, session, notificationStore, telegramStore, clinicStore) as T
+            HomeViewModel(app, dao, personnelDao, accountRepo, session, notificationStore, telegramStore, baleStore, clinicStore) as T
     }
 }

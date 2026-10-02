@@ -4,6 +4,9 @@ import android.net.Uri
 import app.nobat.mobile.notify.TelegramSettingsStore
 import app.nobat.mobile.notify.TelegramSettings
 import app.nobat.mobile.notify.TelegramClient
+import app.nobat.mobile.notify.BaleSettingsStore
+import app.nobat.mobile.notify.BaleSettings
+import app.nobat.mobile.notify.BaleClient
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
@@ -77,12 +80,17 @@ private const val TELEGRAM_SETUP_GUIDE_URL_EN =
     "https://github.com/PouryaFA81/Nobat-Mobile/blob/main/docs/TELEGRAM.md"
 private const val TELEGRAM_SETUP_GUIDE_URL_FA =
     "https://github.com/PouryaFA81/Nobat-Mobile/blob/main/docs/TELEGRAM.fa.md"
+private const val BALE_SETUP_GUIDE_URL_EN =
+    "https://github.com/PouryaFA81/Nobat-Mobile/blob/main/docs/BALE.md"
+private const val BALE_SETUP_GUIDE_URL_FA =
+    "https://github.com/PouryaFA81/Nobat-Mobile/blob/main/docs/BALE.fa.md"
 
 @Composable
 fun IntegrationsPane(
     snackbar: SnackbarHostState,
     accountId: Long,
     telegramStore: TelegramSettingsStore,
+    baleStore: BaleSettingsStore,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -93,6 +101,7 @@ fun IntegrationsPane(
     val sendOkMsg = stringResource(R.string.send_ok)
     val failedMsg = stringResource(R.string.send_failed)
     val testBody = stringResource(R.string.telegram_test_body)
+    val baleTestBody = stringResource(R.string.bale_test_body)
 
     var loaded by remember { mutableStateOf(false) }
     var botToken by remember { mutableStateOf("") }
@@ -100,6 +109,13 @@ fun IntegrationsPane(
     var notifyOnBook by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
     var testing by remember { mutableStateOf(false) }
+
+    var baleLoaded by remember { mutableStateOf(false) }
+    var baleBotToken by remember { mutableStateOf("") }
+    var baleChatId by remember { mutableStateOf("") }
+    var baleNotifyOnBook by remember { mutableStateOf(false) }
+    var baleSaving by remember { mutableStateOf(false) }
+    var baleTesting by remember { mutableStateOf(false) }
 
     fun showSoon() {
         scope.launch { snackbar.showSnackbar(soon) }
@@ -111,6 +127,10 @@ fun IntegrationsPane(
             chatId = ""
             notifyOnBook = false
             loaded = true
+            baleBotToken = ""
+            baleChatId = ""
+            baleNotifyOnBook = false
+            baleLoaded = true
             return@LaunchedEffect
         }
         val s = telegramStore.load(accountId)
@@ -118,6 +138,11 @@ fun IntegrationsPane(
         chatId = s.chatId
         notifyOnBook = s.notifyOnBook
         loaded = true
+        val b = baleStore.load(accountId)
+        baleBotToken = b.botToken
+        baleChatId = b.chatId
+        baleNotifyOnBook = b.notifyOnBook
+        baleLoaded = true
     }
 
     fun currentSettings() = TelegramSettings(
@@ -126,7 +151,14 @@ fun IntegrationsPane(
         notifyOnBook = notifyOnBook,
     )
 
+    fun currentBaleSettings() = BaleSettings(
+        botToken = baleBotToken,
+        chatId = baleChatId,
+        notifyOnBook = baleNotifyOnBook,
+    )
+
     val configured = botToken.isNotBlank() && chatId.isNotBlank()
+    val baleConfigured = baleBotToken.isNotBlank() && baleChatId.isNotBlank()
 
     Column(
         modifier = modifier
@@ -283,11 +315,154 @@ fun IntegrationsPane(
         }
 
         HorizontalDivider()
-        IntegrationBlock(
-            title = stringResource(R.string.bale),
-            tokenLabel = stringResource(R.string.bot_token),
-            onConnect = ::showSoon,
-        )
+
+        // —— Bale (live) ——
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    stringResource(R.string.bale),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                if (baleConfigured) {
+                    Text(
+                        text = stringResource(R.string.connected),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val url = if (AppLocale.isPersian(context)) {
+                            BALE_SETUP_GUIDE_URL_FA
+                        } else {
+                            BALE_SETUP_GUIDE_URL_EN
+                        }
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(R.string.bale_setup_guide),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            if (!baleLoaded) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else {
+                OutlinedTextField(
+                    value = baleBotToken,
+                    onValueChange = { baleBotToken = it },
+                    label = { Text(stringResource(R.string.bot_token)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = accountId > 0L,
+                )
+                OutlinedTextField(
+                    value = baleChatId,
+                    onValueChange = { baleChatId = it },
+                    label = { Text(stringResource(R.string.chat_id)) },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Ltr),
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = accountId > 0L,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = stringResource(R.string.notify_on_book),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = baleNotifyOnBook,
+                        onCheckedChange = { baleNotifyOnBook = it },
+                        enabled = accountId > 0L,
+                    )
+                }
+                Button(
+                    onClick = {
+                        if (baleSaving || accountId <= 0L) return@Button
+                        baleSaving = true
+                        scope.launch {
+                            val saved = baleStore.save(accountId, currentBaleSettings())
+                            baleSaving = false
+                            snackbar.showSnackbar(
+                                if (saved.isSuccess) savedMsg else secureStorageFailedMsg,
+                            )
+                        }
+                    },
+                    enabled = !baleSaving && !baleTesting && accountId > 0L,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                ) {
+                    Text(stringResource(R.string.notifications_save))
+                }
+                OutlinedButton(
+                    onClick = {
+                        if (baleTesting || accountId <= 0L) return@OutlinedButton
+                        baleTesting = true
+                        scope.launch {
+                            val s = currentBaleSettings()
+                            val saved = baleStore.save(accountId, s)
+                            if (saved.isFailure) {
+                                baleTesting = false
+                                snackbar.showSnackbar(secureStorageFailedMsg)
+                                return@launch
+                            }
+                            val result = BaleClient.sendMessage(
+                                botToken = s.botToken,
+                                chatId = s.chatId,
+                                text = baleTestBody,
+                            )
+                            baleTesting = false
+                            snackbar.showSnackbar(
+                                if (result.isSuccess) sendOkMsg else failedMsg,
+                            )
+                        }
+                    },
+                    enabled = !baleSaving && !baleTesting && baleConfigured && accountId > 0L,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                ) {
+                    if (baleTesting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.height(20.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text(stringResource(R.string.test_send))
+                    }
+                }
+            }
+        }
+
         HorizontalDivider()
         IntegrationBlock(
             title = stringResource(R.string.google_drive),
