@@ -16,6 +16,9 @@ import java.time.format.DateTimeFormatter
 /**
  * Builds tomorrow’s schedule digest: SMTP per personnel, optional Telegram,
  * Clinic relay event=digest, and a local notification. Then reschedules the next day.
+ *
+ * Per-channel idempotency: WorkManager retries skip channels already marked sent
+ * for this fire-day + digest time slot (e.g. SMTP fail must not re-send Telegram).
  * Never logs SMTP / Telegram / relay secrets.
  */
 class EveningDigestWorker(
@@ -38,32 +41,51 @@ class EveningDigestWorker(
             return Result.success()
         }
 
+        val fireDay = LocalDate.now().format(DAY_FMT)
+        val hour = settings.digestHour
+        val minute = settings.digestMinute
+        val sentStore = DigestSentStore(applicationContext)
+        var state = sentStore.load(accountId, fireDay, hour, minute)
+
         val tomorrow = LocalDate.now().plusDays(1)
         val dayIso = tomorrow.format(DAY_FMT)
         val all = app.database.appointments().between(accountId, dayIso, dayIso)
             .filter { it.status != "cancelled" }
             .sortedBy { it.startMinute }
 
+        var anyHardFailure = false
+
         // Local in-app notification (this device).
-        ClinicNotifier.notifyDigest(applicationContext, dayIso, all.size)
+        if (DigestIdempotency.shouldSendLocal(state)) {
+            ClinicNotifier.notifyDigest(applicationContext, dayIso, all.size)
+            state = state.withLocal()
+            sentStore.save(accountId, fireDay, hour, minute, state)
+        }
 
         // Telegram: one message when Notify on book is configured.
         val tg = app.telegramStore.load(accountId)
-        if (tg.notifyOnBook && tg.isConfigured()) {
+        if (tg.notifyOnBook && tg.isConfigured() && DigestIdempotency.shouldSendTelegram(state)) {
             val tgBody = buildTelegramBody(dayIso, all)
-            TelegramClient.sendMessage(tg.botToken, tg.chatId, tgBody)
+            val tgResult = TelegramClient.sendMessage(tg.botToken, tg.chatId, tgBody)
+            if (tgResult.isSuccess) {
+                state = state.withTelegram()
+                sentStore.save(accountId, fireDay, hour, minute, state)
+            } else {
+                anyHardFailure = true
+            }
         }
 
         // Clinic relay: one publish per personnel who has slots tomorrow.
         val clinic = app.clinicStore.load(accountId)
-        if (clinic.isConfigured() && all.isNotEmpty()) {
+        if (clinic.isConfigured() && all.isNotEmpty() && DigestIdempotency.shouldSendClinic(state)) {
             val byPersonnel = all.groupBy { it.personnelId }
             val title = applicationContext.getString(R.string.evening_digest)
+            var clinicOk = true
             for ((personnelId, slots) in byPersonnel) {
                 if (personnelId <= 0L) continue
                 val first = slots.first()
                 val time = formatTime(first.startMinute)
-                ClinicRelayClient.publish(
+                val pub = ClinicRelayClient.publish(
                     settings = clinic,
                     event = "digest",
                     personnelId = personnelId,
@@ -72,6 +94,16 @@ class EveningDigestWorker(
                     time = time,
                     title = title,
                 )
+                if (pub.isFailure) {
+                    clinicOk = false
+                    break
+                }
+            }
+            if (clinicOk) {
+                state = state.withClinic()
+                sentStore.save(accountId, fireDay, hour, minute, state)
+            } else {
+                anyHardFailure = true
             }
         }
 
@@ -80,6 +112,7 @@ class EveningDigestWorker(
             val byEmail = all.groupBy { it.personnelEmail.trim().lowercase() }
             for ((emailKey, slots) in byEmail) {
                 if (emailKey.isBlank()) continue
+                if (!DigestIdempotency.shouldSendSmtp(state, emailKey)) continue
                 val to = slots.first().personnelEmail.trim()
                 val subject = applicationContext.getString(R.string.digest_subject, dayIso)
                 val body = buildEmailBody(dayIso, slots)
@@ -96,14 +129,16 @@ class EveningDigestWorker(
                         body = body,
                     ),
                 )
-                if (result.isFailure) {
-                    // Retry whole worker once network/SMTP recovers; next schedule already queued.
-                    return Result.retry()
+                if (result.isSuccess) {
+                    state = state.withSmtpEmail(emailKey)
+                    sentStore.save(accountId, fireDay, hour, minute, state)
+                } else {
+                    anyHardFailure = true
                 }
             }
         }
 
-        return Result.success()
+        return if (anyHardFailure) Result.retry() else Result.success()
     }
 
     private fun buildEmailBody(dayIso: String, slots: List<Appointment>): String {

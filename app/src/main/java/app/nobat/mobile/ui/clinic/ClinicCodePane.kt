@@ -79,6 +79,7 @@ fun ClinicCodePane(
     var token by remember { mutableStateOf("") }
     var connected by remember { mutableStateOf(false) }
     var hosted by remember { mutableStateOf(false) }
+    var hostedOpaqueId by remember { mutableStateOf("") }
     var pasteCode by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
     var adminPath by remember { mutableStateOf(AdminPath.PICK) }
@@ -88,15 +89,22 @@ fun ClinicCodePane(
     val invalidMsg = stringResource(R.string.invalid_clinic_code)
     val invalidOrExpiredMsg = stringResource(R.string.invalid_or_expired_code)
     val purchaseUrlUnsetMsg = stringResource(R.string.relay_purchase_url_unset)
+    val secureStorageFailedMsg = stringResource(R.string.secure_storage_failed)
     val isStaff = AccountRole.isStaff(role)
 
     fun reload() {
-        val s = store.load(accountId)
+        var s = store.load(accountId)
+        // Pre-0.16.1 hosted installs: mint opaque Share id once (never embeds u/t/k).
+        if (s.hosted && s.hostedOpaqueId.isBlank() && s.isConfigured()) {
+            s = s.copy(hostedOpaqueId = ClinicCode.newOpaqueId())
+            store.save(accountId, s)
+        }
         baseUrl = s.baseUrl
         topic = s.topic
         token = s.token
         connected = s.connected && s.isConfigured()
         hosted = s.hosted
+        hostedOpaqueId = s.hostedOpaqueId
         purchaseUrl = store.getRelayPurchaseUrl()
         if (!connected) {
             adminPath = AdminPath.PICK
@@ -115,6 +123,11 @@ fun ClinicCodePane(
         connected = connectedFlag,
         lastMessageId = store.load(accountId).lastMessageId,
         hosted = hostedFlag,
+        hostedOpaqueId = if (hostedFlag) {
+            store.load(accountId).hostedOpaqueId.ifBlank { ClinicCode.newOpaqueId() }
+        } else {
+            ""
+        },
     )
 
     if (!loaded) {
@@ -207,19 +220,27 @@ fun ClinicCodePane(
                     saving = true
                     scope.launch {
                         val decoded = ClinicCode.decode(pasteCode)
-                        if (decoded == null) {
+                        // nobatH1 opaque Share cannot resolve credentials without a future relay service.
+                        if (decoded == null || !decoded.isConfigured()) {
                             saving = false
-                            snackbar.showSnackbar(invalidMsg)
+                            snackbar.showSnackbar(
+                                if (decoded?.hosted == true) invalidOrExpiredMsg else invalidMsg,
+                            )
                             return@launch
                         }
-                        store.save(
+                        val saved = store.save(
                             accountId,
                             decoded.copy(
                                 connected = true,
-                                hosted = false,
+                                hosted = decoded.hosted,
                                 lastMessageId = store.load(accountId).lastMessageId,
                             ),
                         )
+                        if (saved.isFailure) {
+                            saving = false
+                            snackbar.showSnackbar(secureStorageFailedMsg)
+                            return@launch
+                        }
                         ClinicSubscribe.restartLive(context)
                         reload()
                         pasteCode = ""
@@ -231,7 +252,12 @@ fun ClinicCodePane(
                     if (saving) return@StaffClinicSection
                     saving = true
                     scope.launch {
-                        store.clear(accountId)
+                        val cleared = store.clear(accountId)
+                        if (cleared.isFailure) {
+                            saving = false
+                            snackbar.showSnackbar(secureStorageFailedMsg)
+                            return@launch
+                        }
                         ClinicSubscribe.restartLive(context)
                         reload()
                         saving = false
@@ -243,6 +269,7 @@ fun ClinicCodePane(
             AdminClinicHub(
                 connected = connected,
                 hosted = hosted,
+                hostedOpaqueId = hostedOpaqueId,
                 adminPath = adminPath,
                 onPath = { adminPath = it },
                 baseUrl = baseUrl,
@@ -257,8 +284,12 @@ fun ClinicCodePane(
                 onPasteChange = { pasteCode = it },
                 onPurchaseUrl = { purchaseUrl = it },
                 onSavePurchaseUrl = {
-                    store.setRelayPurchaseUrl(purchaseUrl)
-                    scope.launch { snackbar.showSnackbar(savedMsg) }
+                    scope.launch {
+                        val r = store.setRelayPurchaseUrl(purchaseUrl)
+                        snackbar.showSnackbar(
+                            if (r.isSuccess) savedMsg else secureStorageFailedMsg,
+                        )
+                    }
                 },
                 onRedeem = {
                     if (saving) return@AdminClinicHub
@@ -270,14 +301,18 @@ fun ClinicCodePane(
                             snackbar.showSnackbar(invalidOrExpiredMsg)
                             return@launch
                         }
-                        store.save(
-                            accountId,
-                            decoded.copy(
-                                connected = true,
-                                hosted = true,
-                                lastMessageId = store.load(accountId).lastMessageId,
-                            ),
+                        val toSave = decoded.copy(
+                            connected = true,
+                            hosted = true,
+                            hostedOpaqueId = decoded.hostedOpaqueId.ifBlank { ClinicCode.newOpaqueId() },
+                            lastMessageId = store.load(accountId).lastMessageId,
                         )
+                        val saved = store.save(accountId, toSave)
+                        if (saved.isFailure) {
+                            saving = false
+                            snackbar.showSnackbar(secureStorageFailedMsg)
+                            return@launch
+                        }
                         ClinicSubscribe.restartLive(context)
                         reload()
                         pasteCode = ""
@@ -301,14 +336,24 @@ fun ClinicCodePane(
                     if (saving) return@AdminClinicHub
                     saving = true
                     scope.launch {
-                        store.setRelayPurchaseUrl(purchaseUrl)
+                        val purchase = store.setRelayPurchaseUrl(purchaseUrl)
+                        if (purchase.isFailure) {
+                            saving = false
+                            snackbar.showSnackbar(secureStorageFailedMsg)
+                            return@launch
+                        }
                         val s = currentAdminSettings(connectedFlag = true, hostedFlag = false)
                         if (!s.isConfigured()) {
                             saving = false
                             snackbar.showSnackbar(invalidMsg)
                             return@launch
                         }
-                        store.save(accountId, s.copy(connected = true, hosted = false))
+                        val saved = store.save(accountId, s.copy(connected = true, hosted = false, hostedOpaqueId = ""))
+                        if (saved.isFailure) {
+                            saving = false
+                            snackbar.showSnackbar(secureStorageFailedMsg)
+                            return@launch
+                        }
                         reload()
                         saving = false
                         snackbar.showSnackbar(savedMsg)
@@ -333,7 +378,12 @@ fun ClinicCodePane(
                     if (saving) return@AdminClinicHub
                     saving = true
                     scope.launch {
-                        store.clear(accountId)
+                        val cleared = store.clear(accountId)
+                        if (cleared.isFailure) {
+                            saving = false
+                            snackbar.showSnackbar(secureStorageFailedMsg)
+                            return@launch
+                        }
                         ClinicSubscribe.restartLive(context)
                         reload()
                         saving = false
@@ -352,8 +402,14 @@ fun ClinicCodePane(
                             connected = false,
                             lastMessageId = "",
                             hosted = false,
+                            hostedOpaqueId = "",
                         )
-                        store.save(accountId, next)
+                        val saved = store.save(accountId, next)
+                        if (saved.isFailure) {
+                            saving = false
+                            snackbar.showSnackbar(secureStorageFailedMsg)
+                            return@launch
+                        }
                         reload()
                         adminPath = AdminPath.OWN_RELAY
                         saving = false
@@ -417,6 +473,7 @@ private fun StaffClinicSection(
 private fun AdminClinicHub(
     connected: Boolean,
     hosted: Boolean,
+    hostedOpaqueId: String,
     adminPath: AdminPath,
     onPath: (AdminPath) -> Unit,
     baseUrl: String,
@@ -438,7 +495,7 @@ private fun AdminClinicHub(
     onDisconnect: () -> Unit,
     onRegenerate: () -> Unit,
 ) {
-    val code = remember(baseUrl, topic, token, connected, hosted) {
+    val code = remember(baseUrl, topic, token, connected, hosted, hostedOpaqueId) {
         if (!connected) null
         else ClinicCode.encode(
             ClinicSettings(
@@ -447,16 +504,26 @@ private fun AdminClinicHub(
                 token = token,
                 connected = true,
                 hosted = hosted,
+                hostedOpaqueId = hostedOpaqueId,
             ),
         )
     }
 
     if (connected && code != null) {
         Text(
-            text = stringResource(R.string.clinic_code),
+            text = stringResource(
+                if (hosted) R.string.hosted_clinic_code else R.string.clinic_code,
+            ),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (hosted) {
+            Text(
+                text = stringResource(R.string.hosted_code_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         OutlinedTextField(
             value = code,
             onValueChange = {},

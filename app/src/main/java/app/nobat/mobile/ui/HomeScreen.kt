@@ -228,6 +228,7 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     val bookedMsg = stringResource(R.string.booked_toast)
     val movedMsg = stringResource(R.string.moved_toast)
+    val moveFailedMsg = stringResource(R.string.move_failed)
     val reminderScheduledMsg = stringResource(R.string.reminder_scheduled)
     val confirmationSentMsg = stringResource(R.string.confirmation_sent)
     val confirmationFailedMsg = stringResource(R.string.confirmation_failed)
@@ -949,7 +950,9 @@ fun HomeScreen(
                                 snackbar.showSnackbar(addPersonnelFirstMsg)
                                 screen = AppScreen.Personnel
                             }
-                            HomeViewModel.MoveResult.Failed -> {}
+                            HomeViewModel.MoveResult.Failed -> {
+                                snackbar.showSnackbar(moveFailedMsg)
+                            }
                         }
                     }
                 },
@@ -2383,7 +2386,7 @@ private fun MoveDialog(
                     onSave(selectedDay, hour * 60 + minute, duration, note, selectedPersonnelId)
                 },
                 enabled = selectedPersonnelId > 0L,
-            ) { Text(stringResource(R.string.save)) }
+            ) { Text(stringResource(R.string.save_move)) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }

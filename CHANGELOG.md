@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-10-02
+
+### Fixed
+- **Evening digest idempotency** — per-channel success markers (local / Telegram / Clinic / SMTP recipients) keyed by fire day + digest time; WorkManager retries skip already-sent channels (e.g. SMTP fail does not re-send Telegram)
+- **Hosted Clinic Share** — shareable code is opaque `nobatH1:` only (no host/topic/token); own-relay `nobat1:` Share unchanged
+- **Secure storage** — EncryptedSharedPreferences no longer falls back to plaintext prefs on Keystore failure; UI surfaces a clear error instead
+
+### Changed
+- Move CTAs / staff-notify strings (Pen); remove unused `send_confirmation_now` helper
+- versionName **0.16.1**, versionCode **23**
+
+### Notes
+- Hosted opaque Share: staff Connect still needs a full Relay/Clinic credential code (`nobat1:` / `nobatR1:`) until a resolution service exists; admin publish continues on the device that redeemed
+- Heavier Clinic docs prose may be refreshed by Pen after tag
+
 ## [0.16.0] - 2026-10-01
 
 ### Added
@@ -238,6 +253,7 @@ First **pre-release** debug APK (scaffold only — not feature-complete).
 - Book / cancel / SMTP / SMS come in later 0.x builds
 - **1.0.0** reserved for the first build with a working booking loop
 
+[0.16.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.16.1
 [0.16.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.16.0
 [0.15.1]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.15.1
 [0.15.0]: https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.15.0
