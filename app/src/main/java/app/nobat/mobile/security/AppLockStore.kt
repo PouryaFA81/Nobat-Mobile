@@ -2,8 +2,6 @@ package app.nobat.mobile.security
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,10 +25,24 @@ enum class LockAfterOption(val prefValue: String, val timeoutMs: Long?) {
 /**
  * App-level lock: PIN hash (PBKDF2) + biometric toggle + lock-after preference
  * in EncryptedSharedPreferences. In-memory [unlocked] clears per lock-after rules.
+ * Does not fall back to plaintext prefs on Keystore failure.
  */
 class AppLockStore(context: Context) {
     private val appContext = context.applicationContext
-    private val prefs: SharedPreferences = createPrefs(appContext)
+    private val prefs: SharedPreferences?
+    private val openError: SecureStorageException?
+
+    init {
+        var p: SharedPreferences? = null
+        var err: SecureStorageException? = null
+        try {
+            p = SecurePrefs.open(appContext, PREFS_NAME)
+        } catch (e: SecureStorageException) {
+            err = e
+        }
+        prefs = p
+        openError = err
+    }
 
     private val _unlocked = MutableStateFlow(false)
     val unlocked: StateFlow<Boolean> = _unlocked.asStateFlow()
@@ -38,11 +50,19 @@ class AppLockStore(context: Context) {
     /** Wall-clock ms when the app last went to background (timer modes). */
     private var backgroundedAtMs: Long = 0L
 
-    fun isPinEnabled(): Boolean =
-        prefs.getBoolean(KEY_PIN_ENABLED, false) && hasPinStored()
+    fun isSecureStorageAvailable(): Boolean = prefs != null
 
-    fun isBiometricEnabled(): Boolean =
-        prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false) && isPinEnabled()
+    fun secureStorageError(): SecureStorageException? = openError
+
+    fun isPinEnabled(): Boolean {
+        val prefs = prefs ?: return false
+        return prefs.getBoolean(KEY_PIN_ENABLED, false) && hasPinStored()
+    }
+
+    fun isBiometricEnabled(): Boolean {
+        val prefs = prefs ?: return false
+        return prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false) && isPinEnabled()
+    }
 
     /** True when PIN and/or biometric should gate sensitive UI. */
     fun isLockEnabled(): Boolean = isPinEnabled()
@@ -59,11 +79,15 @@ class AppLockStore(context: Context) {
         backgroundedAtMs = 0L
     }
 
-    fun getLockAfter(): LockAfterOption =
-        LockAfterOption.fromPref(prefs.getString(KEY_LOCK_AFTER, null))
+    fun getLockAfter(): LockAfterOption {
+        val prefs = prefs ?: return LockAfterOption.WHEN_PHONE_LOCKS
+        return LockAfterOption.fromPref(prefs.getString(KEY_LOCK_AFTER, null))
+    }
 
-    fun setLockAfter(option: LockAfterOption) {
+    fun setLockAfter(option: LockAfterOption): Boolean {
+        val prefs = prefs ?: return false
         prefs.edit().putString(KEY_LOCK_AFTER, option.prefValue).apply()
+        return true
     }
 
     /** Call on ON_STOP when a timed lock-after is selected. */
@@ -76,7 +100,7 @@ class AppLockStore(context: Context) {
 
     /**
      * Call on ON_START. For timer modes, locks if the timeout elapsed while backgrounded.
-     * [WHEN_PHONE_LOCKS] is handled via screen-off broadcast, not here.
+     * [LockAfterOption.WHEN_PHONE_LOCKS] is handled via screen-off broadcast, not here.
      */
     fun evaluateResumeLock(nowMs: Long = System.currentTimeMillis()) {
         if (!isLockEnabled() || !_unlocked.value) return
@@ -89,16 +113,20 @@ class AppLockStore(context: Context) {
     }
 
     fun hasPinStored(): Boolean {
+        val prefs = prefs ?: return false
         val hash = prefs.getString(KEY_PIN_HASH, null)
         val salt = prefs.getString(KEY_PIN_SALT, null)
         return !hash.isNullOrBlank() && !salt.isNullOrBlank()
     }
 
     /** Configured PIN length (4–6). Falls back to MAX when unset (legacy). */
-    fun pinLength(): Int =
-        prefs.getInt(KEY_PIN_LENGTH, MAX_PIN_LENGTH).coerceIn(MIN_PIN_LENGTH, MAX_PIN_LENGTH)
+    fun pinLength(): Int {
+        val prefs = prefs ?: return MAX_PIN_LENGTH
+        return prefs.getInt(KEY_PIN_LENGTH, MAX_PIN_LENGTH).coerceIn(MIN_PIN_LENGTH, MAX_PIN_LENGTH)
+    }
 
     fun setPin(pin: CharArray): Boolean {
+        val prefs = prefs ?: return false
         if (pin.size < MIN_PIN_LENGTH || pin.size > MAX_PIN_LENGTH) return false
         if (!pin.all { it.isDigit() }) return false
         val salt = PasswordHasher.generateSalt()
@@ -113,6 +141,7 @@ class AppLockStore(context: Context) {
     }
 
     fun verifyPin(pin: CharArray): Boolean {
+        val prefs = prefs ?: return false
         val hashEnc = prefs.getString(KEY_PIN_HASH, null) ?: return false
         val saltEnc = prefs.getString(KEY_PIN_SALT, null) ?: return false
         return try {
@@ -132,6 +161,7 @@ class AppLockStore(context: Context) {
     }
 
     fun disablePin(current: CharArray): Boolean {
+        val prefs = prefs ?: return false
         if (!verifyPin(current)) return false
         prefs.edit()
             .remove(KEY_PIN_HASH)
@@ -144,9 +174,11 @@ class AppLockStore(context: Context) {
         return true
     }
 
-    fun setBiometricEnabled(enabled: Boolean) {
-        if (!isPinEnabled()) return
+    fun setBiometricEnabled(enabled: Boolean): Boolean {
+        val prefs = prefs ?: return false
+        if (!isPinEnabled()) return false
         prefs.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply()
+        return true
     }
 
     companion object {
@@ -160,22 +192,5 @@ class AppLockStore(context: Context) {
         private const val KEY_PIN_ENABLED = "pin_enabled"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
         private const val KEY_LOCK_AFTER = "lock_after"
-
-        private fun createPrefs(context: Context): SharedPreferences {
-            return try {
-                val masterKey = MasterKey.Builder(context)
-                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                    .build()
-                EncryptedSharedPreferences.create(
-                    context,
-                    PREFS_NAME,
-                    masterKey,
-                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-                )
-            } catch (_: Exception) {
-                context.getSharedPreferences(PREFS_NAME + "_fallback", Context.MODE_PRIVATE)
-            }
-        }
     }
 }

@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.16.0">v0.16.0</a></em>
+  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.16.1">v0.16.1</a></em>
 </p>
 
 ---
@@ -21,17 +21,17 @@ Small clinics, counselors, and front-desk teams who want a **simple appointment 
 
 If you already self-host the original [Nobat](https://github.com/PouryaFA81/Nobat) server, keep that for privacy-first hosting. **Nobat Mobile** is the sibling product for people who just want an app on the phone.
 
-## What’s in the app (v0.16.0)
+## What’s in the app (v0.16.1)
 
 - **Local accounts** — Several profiles on one phone; password for create/change only; unlock with PIN/fingerprint; data stays on the device  
-- **Personnel** — Staff list (name, email, phone); book **Assign to** so SMTP confirmation + 1h reminder go to that person  
+- **Personnel** — Staff list (name, email, phone); book **Assign to** so SMTP staff notify + 1h reminder go to that person (not client confirmation)  
 - **App lock** — PIN (auto-submit), optional fingerprint, and **Lock after** (5 / 30 min, 1 hour, or when phone locks)  
 - **Calendar** — Month grid → day list; book, **Move / Reschedule**, cancel, empty-day CTA  
 - **Jalali in Persian** — FA uses the solar calendar (week starts شنبه); English stays Gregorian  
 - **Language** — فارسی (RTL) / English (LTR), including chrome and strings  
 - **Theme** — Dark (default) or Light  
-- **Email (SMTP)** — Save your mailbox, test send, confirmation on book, reminder **1 hour before**  
-- **Evening digest** — Optional daily summary of **tomorrow’s** appointments (default 20:00): SMTP per staff, Telegram if Notify on book, Clinic relay `digest`, local notification  
+- **Email (SMTP)** — Save your mailbox, test send, staff notify on book/move, reminder **1 hour before**  
+- **Evening digest** — Optional daily summary of **tomorrow’s** appointments (default 20:00) for **assigned staff/personnel**: SMTP per staff email, Telegram if Notify on book, Clinic relay `digest`, local notification; per-channel idempotent on WorkManager retry  
 - **SMS** — Opens your phone’s SMS app with a prefilled message (you tap Send)  
 - **Account hub** — Scrollable sections: Account Management, Preferences, Advanced Settings, About  
 - **About** — Version, check for updates, GitHub contact links  
@@ -39,7 +39,7 @@ If you already self-host the original [Nobat](https://github.com/PouryaFA81/Noba
 - **Reports & Print PDF** — Advanced Settings → Reports: day/month range; on-device PDF; Share / Print  
 - **Telegram** — Integrations: your bot token + chat ID; Test send; optional notify on book (staff name + appointment in message)  
 - **Role & My schedule** — Admin / Secretary or Staff; link to personnel; Admin Everyone + My schedule tabs; Staff My schedule only (no FAB); local notify on book/cancel/move  
-- **Clinic notifications** — Dual path: **Relay code** (hosted Redeem) or **Your own relay**; shareable Clinic code; Staff paste → Connect; Hosted chip hides real host; in-app alerts for assigned book/cancel/move  
+- **Clinic notifications** — Dual path: **Relay code** (hosted Redeem) or **Your own relay**; own-relay Share embeds `nobat1:` host/topic/token; **hosted Share** is opaque `nobatH1:` only (no relay address); Staff paste → Connect (full `nobat1:` / `nobatR1:` today; opaque pending future resolve); Hosted chip hides real host; in-app alerts for assigned book/cancel/move  
 - **Coming soon (shells)** — Bale, Google Drive, Google Calendar, Drive backup  
 
 Next: Drive sync and the remaining shells.
@@ -83,13 +83,13 @@ Staff get **in-app** alerts via a **Clinic code**. Admin picks **Relay code** (h
 - English: **[Clinic notifications setup](docs/CLINIC-NOTIFICATIONS.md)**
 - فارسی: **[اعلان‌های مطب](docs/CLINIC-NOTIFICATIONS.fa.md)**
 
-In the app (from **0.15.1**): **Clinic code** under Advanced Settings — dual path. The UI never names the relay product; hosted path never shows the real host.
+In the app (from **0.15.1**, opaque hosted Share from **0.16.1**): **Clinic code** under Advanced Settings — dual path. The UI never names the relay product; hosted path never shows the real host; hosted Share is `nobatH1:` only (staff Connect of opaque codes needs a future resolve service).
 
 ## Try it on your phone
 
 ### Option A — download the APK (recommended)
 
-1. Open [Releases → v0.15.1](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.15.1) (or the latest pre-release)
+1. Open [Releases → v0.16.1](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.16.1) (or the latest pre-release)
 2. Download the `.apk`
 3. On your phone, allow install from that source
 4. Open **Nobat Mobile**, create or unlock a local account, then use the calendar
@@ -108,7 +108,7 @@ The first sync can take a few minutes.
 
 ## Status
 
-Pre-release dogfood builds. Booking, accounts, roles/My schedule, clinic notifications, app lock, language, SMTP reminders, Telegram, and themes are in **v0.15.1**. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
+Pre-release dogfood builds. Booking, Move, accounts, roles/My schedule, clinic notifications (hosted opaque Share), evening digest, app lock, language, SMTP staff notify + reminders, Telegram, and themes are in **v0.16.1**. Not yet: recurring, waitlist, conflict/hours checks, client confirmation, Bale, Drive, Calendar. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
 
 Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
 

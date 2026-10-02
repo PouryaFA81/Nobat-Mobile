@@ -111,6 +111,7 @@
     <string name="evening_digest_on">Send evening digest</string>
     <string name="digest_time">Digest time</string>
     <string name="digest_via_email">Email (SMTP)</string>
+    <string name="digest_also_channels">Also sends via Telegram, Clinic, and local when those are on.</string>
     <string name="digest_empty">No appointments tomorrow</string>
     <string name="digest_subject">Tomorrow’s schedule — %1$s</string>
     <string name="digest_header">Appointments for %1$s</string>
@@ -118,10 +119,9 @@
     <string name="digest_sent">Digest sent</string>
     <string name="digest_needs_smtp">Set up SMTP first</string>
 
-    <string name="send_confirmation_now">Send confirmation now</string>
     <string name="reminder_scheduled">Reminder scheduled</string>
-    <string name="confirmation_sent">Confirmation sent</string>
-    <string name="confirmation_failed">Confirmation failed</string>
+    <string name="confirmation_sent">Staff notified</string>
+    <string name="confirmation_failed">Staff notify failed</string>
     <string name="setup_smtp_first">Set up SMTP first</string>
     <string name="set_recipient">Set reminder recipient</string>
     <string name="theme_dark">Dark</string>
@@ -131,7 +131,7 @@
     <string name="reminder_recipient">Reminder recipient</string>
     <string name="reminder_email_subject">Appointment reminder: %1$s</string>
     <string name="reminder_email_body">Appointment reminder: %1$s — %2$s at %3$s (%4$d min)</string>
-    <string name="confirmation_email_subject">Appointment confirmed: %1$s</string>
+    <string name="confirmation_email_subject">Appointment saved: %1$s</string>
     <string name="confirmation_email_body">Appointment saved: %1$s — %2$s at %3$s (%4$d min)</string>
 
     <!-- Security / shells (Pen) -->
@@ -240,10 +240,12 @@
     <string name="move_appointment">Move</string>
     <string name="move_title">Reschedule</string>
     <string name="reschedule">Reschedule</string>
+    <string name="save_move">Save move</string>
     <string name="new_time">New time</string>
     <string name="new_date">New date</string>
     <string name="pick_new_date">Pick date</string>
     <string name="moved_toast">Appointment moved</string>
+    <string name="move_failed">Couldn’t move appointment</string>
     <string name="notif_appointment_moved">Appointment moved</string>
     <string name="move_email_subject">Appointment moved: %1$s</string>
     <string name="move_email_body">Appointment moved: %1$s — %2$s at %3$s (%4$d min)</string>
@@ -279,5 +281,8 @@
     <string name="relay_advanced">Relay advanced</string>
     <string name="relay_purchase_url">Purchase / contact URL</string>
     <string name="relay_purchase_url_unset">Set a purchase URL under Your own relay → Relay advanced first</string>
+    <string name="hosted_clinic_code">Clinic code (hosted)</string>
+    <string name="hosted_code_hint">Share this code with staff. It does not include your relay address.</string>
+    <string name="secure_storage_failed">Secure storage unavailable. Credentials were not saved.</string>
 
 </resources>

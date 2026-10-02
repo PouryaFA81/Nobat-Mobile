@@ -2,17 +2,34 @@ package app.nobat.mobile.notify
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import app.nobat.mobile.security.SecurePrefs
+import app.nobat.mobile.security.SecureStorageException
 
 /**
  * Per-account notification settings in EncryptedSharedPreferences.
  * Keys are scoped by [accountId]. Never logs passwords.
+ * Does not fall back to plaintext prefs on Keystore failure.
  */
 class NotificationSettingsStore(context: Context) {
-    private val prefs: SharedPreferences = createPrefs(context.applicationContext)
+    private val prefs: SharedPreferences?
+    private val openError: SecureStorageException?
+
+    init {
+        var p: SharedPreferences? = null
+        var err: SecureStorageException? = null
+        try {
+            p = SecurePrefs.open(context.applicationContext, PREFS_NAME)
+        } catch (e: SecureStorageException) {
+            err = e
+        }
+        prefs = p
+        openError = err
+    }
+
+    fun isSecureStorageAvailable(): Boolean = prefs != null
 
     fun load(accountId: Long): NotificationSettings {
+        val prefs = prefs ?: return NotificationSettings()
         val p = prefix(accountId)
         return NotificationSettings(
             remindersOn = prefs.getBoolean(p + KEY_REMINDERS_ON, false),
@@ -29,7 +46,8 @@ class NotificationSettingsStore(context: Context) {
         )
     }
 
-    fun save(accountId: Long, settings: NotificationSettings) {
+    fun save(accountId: Long, settings: NotificationSettings): Result<Unit> {
+        val prefs = prefs ?: return Result.failure(openError ?: SecureStorageException())
         val p = prefix(accountId)
         val (h, m) = NotificationSettings.parseDigestTime(settings.digestTime)
         val normalizedTime = NotificationSettings.formatDigestTime(h, m)
@@ -45,10 +63,12 @@ class NotificationSettingsStore(context: Context) {
             .putString(p + KEY_FROM, settings.smtpFrom.trim())
             .putString(p + KEY_TEST_TO, settings.testRecipient.trim())
             .apply()
+        return Result.success(Unit)
     }
 
     /** Remove all keys for an account (e.g. when clearing local prefs). */
-    fun clear(accountId: Long) {
+    fun clear(accountId: Long): Result<Unit> {
+        val prefs = prefs ?: return Result.failure(openError ?: SecureStorageException())
         val p = prefix(accountId)
         prefs.edit()
             .remove(p + KEY_REMINDERS_ON)
@@ -62,6 +82,7 @@ class NotificationSettingsStore(context: Context) {
             .remove(p + KEY_FROM)
             .remove(p + KEY_TEST_TO)
             .apply()
+        return Result.success(Unit)
     }
 
     private fun prefix(accountId: Long) = "acct_${accountId}_"
@@ -78,23 +99,5 @@ class NotificationSettingsStore(context: Context) {
         private const val KEY_PASS = "smtp_pass"
         private const val KEY_FROM = "smtp_from"
         private const val KEY_TEST_TO = "test_to"
-
-        private fun createPrefs(context: Context): SharedPreferences {
-            return try {
-                val masterKey = MasterKey.Builder(context)
-                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                    .build()
-                EncryptedSharedPreferences.create(
-                    context,
-                    PREFS_NAME,
-                    masterKey,
-                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-                )
-            } catch (_: Exception) {
-                // Fallback if Keystore unavailable (rare on API 26+); still per-account scoped.
-                context.getSharedPreferences(PREFS_NAME + "_fallback", Context.MODE_PRIVATE)
-            }
-        }
     }
 }
