@@ -83,7 +83,7 @@ Staff get **in-app** alerts via a **Clinic code**. Admin picks **Relay code** (h
 - English: **[Clinic notifications setup](docs/CLINIC-NOTIFICATIONS.md)**
 - فارسی: **[اعلان‌های مطب](docs/CLINIC-NOTIFICATIONS.fa.md)**
 
-In the app (from **0.15.1**): **Clinic code** under Advanced Settings — dual path. The UI never names the relay product; hosted path never shows the real host.
+In the app (from **0.15.1**, opaque hosted Share from **0.16.1**): **Clinic code** under Advanced Settings — dual path. The UI never names the relay product; hosted path never shows the real host; hosted Share is `nobatH1:` only (staff Connect of opaque codes needs a future resolve service).
 
 ## Try it on your phone
 
