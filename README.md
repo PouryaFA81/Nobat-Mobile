@@ -30,7 +30,7 @@ If you already self-host the original [Nobat](https://github.com/PouryaFA81/Noba
 - **Jalali in Persian** — FA uses the solar calendar (week starts شنبه); English stays Gregorian  
 - **Language** — فارسی (RTL) / English (LTR), including chrome and strings  
 - **Theme** — Dark (default) or Light  
-- **Email (SMTP)** — Save your mailbox, test send, staff notify on book/move, reminder **1 hour before**  
+- **Email (SMTP)** — Save your mailbox, test send, staff notify on book/move/cancel, reminder **1 hour before**  
 - **Evening digest** — Optional daily summary of **tomorrow’s** appointments (default 20:00) for **assigned staff/personnel**: SMTP per staff email, Telegram/Bale if Notify on book, Clinic relay `digest`, local notification; per-channel idempotent on WorkManager retry  
 - **SMS** — Opens your phone’s SMS app with a prefilled message (you tap Send)  
 - **Account hub** — Scrollable sections: Account Management, Preferences, Advanced Settings, About  
