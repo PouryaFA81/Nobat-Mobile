@@ -1,6 +1,6 @@
 # Bale setup guide (Nobat Mobile)
 
-Nobat Mobile can notify staff on **Bale** using **your** bot. You paste the token and chat ID under **Account → Advanced Settings → Integrations → Bale**. Messages go through Bale’s official Bot API — not our servers.
+Nobat Mobile can notify **staff / personnel** on **Bale** using **your** bot. Paste the token and chat ID under **Account → Advanced Settings → Integrations → Bale**. Messages go through Bale’s official Bot API — not our servers. This is **not** client confirmation.
 
 Persian: [راهنمای راه‌اندازی بله](BALE.fa.md)
 
@@ -10,7 +10,7 @@ Persian: [راهنمای راه‌اندازی بله](BALE.fa.md)
 2. A bot (from [@Botfather](https://ble.ir/botfather) in Bale)  
 3. The **chat ID** where messages should land (usually a private chat with the bot, or a group the bot is in)
 
-Then in the app: **Bot token** · **Chat ID** → **Save** → **Test send**. Turn on **Notify on book** so the assigned personnel gets a message when you book (alongside SMTP / Telegram if enabled).
+Then in the app: **Bot token** · **Chat ID** → **Save** → **Test send**. Turn on **Notify on book** so the assigned personnel gets a message when you book or move (and for evening digest when that job runs) — alongside SMTP / Telegram / Clinic if those are enabled.
 
 ---
 
@@ -37,7 +37,7 @@ Then in the app: **Bot token** · **Chat ID** → **Save** → **Test send**. Tu
 
 ### Group
 
-1. Add the bot to the group and send a message mentioning it
+1. Add the bot to the group and send a message mentioning it  
 2. Call `getUpdates` the same way and use the group’s `"chat":{"id":` (often a **negative** number)
 
 ---
@@ -49,19 +49,19 @@ Then in the app: **Bot token** · **Chat ID** → **Save** → **Test send**. Tu
 | **Bot token** | From Botfather in Bale |
 | **Chat ID** | From `getUpdates` |
 | **Test send** | Sends a short test message |
-| **Notify on book** | On = message when you book with **Assign to** |
+| **Notify on book** | On = staff message on **book** and **move** with **Assign to**, and on **evening digest** when configured |
 
 Token and chat ID stay **on this phone**, for the local account you’re using.
 
-API used by the app: `https://tapi.bale.ai/bot<token>/sendMessage` ([official docs](https://docs.bale.ai/)).
+API used by the app: `https://tapi.bale.ai/bot<token>/sendMessage` ([official docs](https://docs.bale.ai/)). Do not bake any other host into the APK or defaults.
 
 ---
 
 ## Tips
 
 - If **Test send** fails, check the token, that you started the bot chat, and that the chat ID matches  
-- For staff who don’t use Bale yet, keep **SMTP** or **Telegram** on as the main path  
-- Evening digest also uses Bale when **Notify on book** is on and the bot is configured  
+- Staff who don’t use Bale can stay on **SMTP** or **Telegram** instead  
+- Cancel does not send a Bale message in this version (same as Telegram)  
 
 ## Need help?
 
