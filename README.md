@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.17.0">v0.17.0</a></em>
+  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.17.1">v0.17.1</a></em>
 </p>
 
 ---
@@ -21,7 +21,7 @@ Small clinics, counselors, and front-desk teams who want a **simple appointment 
 
 If you already self-host the original [Nobat](https://github.com/PouryaFA81/Nobat) server, keep that for privacy-first hosting. **Nobat Mobile** is the sibling product for people who just want an app on the phone.
 
-## What’s in the app (v0.17.0)
+## What’s in the app (v0.17.1)
 
 - **Local accounts** — Several profiles on one phone; password for create/change only; unlock with PIN/fingerprint; data stays on the device  
 - **Personnel** — Staff list (name, email, phone); book **Assign to** so SMTP staff notify + 1h reminder go to that person (not client confirmation)  
@@ -99,7 +99,7 @@ In the app (from **0.15.1**, opaque hosted Share from **0.16.1**): **Clinic code
 
 ### Option A — download the APK (recommended)
 
-1. Open [Releases → v0.17.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.17.0) (or the latest pre-release)
+1. Open [Releases → v0.17.1](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.17.1) (or the latest pre-release)
 2. Download the `.apk`
 3. On your phone, allow install from that source
 4. Open **Nobat Mobile**, create or unlock a local account, then use the calendar
@@ -118,7 +118,7 @@ The first sync can take a few minutes.
 
 ## Status
 
-Pre-release dogfood builds. Booking, Move, accounts, roles/My schedule, clinic notifications (hosted opaque Share), evening digest, app lock, language, SMTP staff notify + reminders, Telegram, Bale, and themes are in **v0.17.0**. Not yet: recurring, waitlist, conflict/hours checks, client confirmation, Drive, Calendar. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
+Pre-release dogfood builds. Booking, Move, accounts, roles/My schedule, clinic notifications (hosted opaque Share), evening digest, app lock, language, SMTP staff notify + reminders, Telegram, Bale, and themes are in **v0.17.1**. Not yet: recurring, waitlist, conflict/hours checks, client confirmation, Drive, Calendar. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
 
 Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
 

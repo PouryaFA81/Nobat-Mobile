@@ -75,6 +75,17 @@ object Jalali {
         return "%04d-%02d-%02d".format(j.year, j.month, j.day)
     }
 
+    /**
+     * Human-readable day for notification copy.
+     * When [language] is Farsi, the Jalali [dayLabel] (Latin digits). Otherwise the stored ISO day.
+     * Unparseable input is returned unchanged. Does not change stored or relay ISO days.
+     */
+    fun formatStoredDay(isoDay: String, language: String): String {
+        if (!language.startsWith("fa", ignoreCase = true)) return isoDay
+        val date = runCatching { LocalDate.parse(isoDay) }.getOrNull() ?: return isoDay
+        return dayLabel(date)
+    }
+
     /** Jalali day-of-month for a Gregorian date (for grid cells). */
     fun dayOfMonth(g: LocalDate): Int = toJalali(g).day
 

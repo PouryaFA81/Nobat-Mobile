@@ -5,7 +5,9 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import app.nobat.mobile.NobatApp
 import app.nobat.mobile.R
+import app.nobat.mobile.calendar.Jalali
 import app.nobat.mobile.data.Appointment
+import app.nobat.mobile.locale.AppLocale
 import app.nobat.mobile.notify.ClinicNotifier
 import app.nobat.mobile.notify.ClinicRelayClient
 import app.nobat.mobile.notify.SmtpClient
@@ -50,6 +52,7 @@ class EveningDigestWorker(
 
         val tomorrow = LocalDate.now().plusDays(1)
         val dayIso = tomorrow.format(DAY_FMT)
+        val dayText = Jalali.formatStoredDay(dayIso, AppLocale.effectiveLanguage(applicationContext))
         val all = app.database.appointments().between(accountId, dayIso, dayIso)
             .filter { it.status != "cancelled" }
             .sortedBy { it.startMinute }
@@ -58,7 +61,7 @@ class EveningDigestWorker(
 
         // Local in-app notification (this device).
         if (DigestIdempotency.shouldSendLocal(state)) {
-            ClinicNotifier.notifyDigest(applicationContext, dayIso, all.size)
+            ClinicNotifier.notifyDigest(applicationContext, dayText, all.size)
             state = state.withLocal()
             sentStore.save(accountId, fireDay, hour, minute, state)
         }
@@ -66,7 +69,7 @@ class EveningDigestWorker(
         // Telegram: one message when Notify on book is configured.
         val tg = app.telegramStore.load(accountId)
         if (tg.notifyOnBook && tg.isConfigured() && DigestIdempotency.shouldSendTelegram(state)) {
-            val tgBody = buildMessengerBody(dayIso, all)
+            val tgBody = buildMessengerBody(dayText, all)
             val tgResult = TelegramClient.sendMessage(tg.botToken, tg.chatId, tgBody)
             if (tgResult.isSuccess) {
                 state = state.withTelegram()
@@ -79,7 +82,7 @@ class EveningDigestWorker(
         // Bale: same gate as Telegram (Notify on book + configured).
         val bale = app.baleStore.load(accountId)
         if (bale.notifyOnBook && bale.isConfigured() && DigestIdempotency.shouldSendBale(state)) {
-            val baleBody = buildMessengerBody(dayIso, all)
+            val baleBody = buildMessengerBody(dayText, all)
             val baleResult = BaleClient.sendMessage(bale.botToken, bale.chatId, baleBody)
             if (baleResult.isSuccess) {
                 state = state.withBale()
@@ -128,8 +131,8 @@ class EveningDigestWorker(
                 if (emailKey.isBlank()) continue
                 if (!DigestIdempotency.shouldSendSmtp(state, emailKey)) continue
                 val to = slots.first().personnelEmail.trim()
-                val subject = applicationContext.getString(R.string.digest_subject, dayIso)
-                val body = buildEmailBody(dayIso, slots)
+                val subject = applicationContext.getString(R.string.digest_subject, dayText)
+                val body = buildEmailBody(dayText, slots)
                 val result = SmtpClient.send(
                     SmtpClient.MailRequest(
                         host = settings.smtpHost,
@@ -155,8 +158,8 @@ class EveningDigestWorker(
         return if (anyHardFailure) Result.retry() else Result.success()
     }
 
-    private fun buildEmailBody(dayIso: String, slots: List<Appointment>): String {
-        val header = applicationContext.getString(R.string.digest_header, dayIso)
+    private fun buildEmailBody(dayText: String, slots: List<Appointment>): String {
+        val header = applicationContext.getString(R.string.digest_header, dayText)
         if (slots.isEmpty()) {
             return header + "\n" + applicationContext.getString(R.string.digest_empty)
         }
@@ -171,8 +174,8 @@ class EveningDigestWorker(
         return "$header\n$lines"
     }
 
-    private fun buildMessengerBody(dayIso: String, slots: List<Appointment>): String {
-        val header = applicationContext.getString(R.string.digest_header, dayIso)
+    private fun buildMessengerBody(dayText: String, slots: List<Appointment>): String {
+        val header = applicationContext.getString(R.string.digest_header, dayText)
         if (slots.isEmpty()) {
             return header + "\n" + applicationContext.getString(R.string.digest_empty)
         }

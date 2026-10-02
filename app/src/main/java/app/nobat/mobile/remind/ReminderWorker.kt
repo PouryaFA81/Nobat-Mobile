@@ -5,6 +5,8 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import app.nobat.mobile.NobatApp
 import app.nobat.mobile.R
+import app.nobat.mobile.calendar.Jalali
+import app.nobat.mobile.locale.AppLocale
 import app.nobat.mobile.notify.SmtpClient
 
 /**
@@ -40,7 +42,7 @@ class ReminderWorker(
         val body = applicationContext.getString(
             R.string.reminder_email_body,
             initials,
-            day,
+            Jalali.formatStoredDay(day, AppLocale.effectiveLanguage(applicationContext)),
             time,
             durationMin,
         )

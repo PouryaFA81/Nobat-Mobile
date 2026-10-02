@@ -252,8 +252,12 @@
     <string name="notif_appointment_moved">Appointment moved</string>
     <string name="move_email_subject">Appointment moved: %1$s</string>
     <string name="move_email_body">Appointment moved: %1$s — %2$s at %3$s (%4$d min)</string>
+    <string name="cancel_email_subject">Appointment cancelled: %1$s</string>
+    <string name="cancel_email_body">Appointment cancelled: %1$s — %2$s at %3$s (%4$d min)</string>
     <string name="telegram_move_message">Appointment moved: %1$s — %2$s at %3$s (%4$d min) · Staff: %5$s</string>
     <string name="bale_move_message">Appointment moved: %1$s — %2$s at %3$s (%4$d min) · Staff: %5$s</string>
+    <string name="telegram_cancel_message">Appointment cancelled: %1$s — %2$s at %3$s (%4$d min) · Staff: %5$s</string>
+    <string name="bale_cancel_message">Appointment cancelled: %1$s — %2$s at %3$s (%4$d min) · Staff: %5$s</string>
 
     <string name="not_linked">Not linked</string>
 

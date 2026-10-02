@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import app.nobat.mobile.R
 import app.nobat.mobile.calendar.Jalali
+import app.nobat.mobile.locale.AppLocale
 import app.nobat.mobile.data.Account
 import app.nobat.mobile.data.AccountRepository
 import app.nobat.mobile.data.AccountRole
@@ -60,6 +61,10 @@ class HomeViewModel(
 ) : AndroidViewModel(app) {
     private val dayFmt = DateTimeFormatter.ISO_LOCAL_DATE
     private val appContext = app.applicationContext
+
+    /** FA: Jalali dayLabel; EN: stored ISO yyyy-MM-dd. */
+    private fun displayDay(isoDay: String): String =
+        Jalali.formatStoredDay(isoDay, AppLocale.effectiveLanguage(appContext))
 
     private val _day = MutableStateFlow(LocalDate.now())
     val day: StateFlow<LocalDate> = _day
@@ -306,7 +311,7 @@ class HomeViewModel(
                 val body = appContext.getString(
                     R.string.confirmation_email_body,
                     saved.initials,
-                    saved.day,
+                    displayDay(saved.day),
                     time,
                     saved.durationMin,
                 )
@@ -336,7 +341,7 @@ class HomeViewModel(
             val tgText = appContext.getString(
                 R.string.telegram_book_message,
                 saved.initials,
-                saved.day,
+                displayDay(saved.day),
                 time,
                 saved.durationMin,
                 person.name,
@@ -352,7 +357,7 @@ class HomeViewModel(
             val baleText = appContext.getString(
                 R.string.bale_book_message,
                 saved.initials,
-                saved.day,
+                displayDay(saved.day),
                 time,
                 saved.durationMin,
                 person.name,
@@ -362,7 +367,7 @@ class HomeViewModel(
 
         // Local in-app notification on this device (Phase 1).
         val time = "%02d:%02d".format(saved.startMinute / 60, saved.startMinute % 60)
-        ClinicNotifier.notifyBooked(appContext, saved.initials, saved.day, time)
+        ClinicNotifier.notifyBooked(appContext, saved.initials, displayDay(saved.day), time)
 
         // Clinic relay publish for staff phones (Phase 2). Failures do not fail the book.
         val clinic = clinicStore.load(accountId)
@@ -395,10 +400,11 @@ class HomeViewModel(
             dao.delete(accountId, id)
             if (existing != null) {
                 val time = "%02d:%02d".format(existing.startMinute / 60, existing.startMinute % 60)
+                val dayText = displayDay(existing.day)
                 ClinicNotifier.notifyCancelled(
                     appContext,
                     existing.initials,
-                    existing.day,
+                    dayText,
                     time,
                 )
                 val clinic = clinicStore.load(accountId)
@@ -412,6 +418,65 @@ class HomeViewModel(
                         day = existing.day,
                         time = time,
                         title = title,
+                    )
+                }
+
+                val staffName = personnelDao.get(accountId, existing.personnelId)?.name.orEmpty()
+
+                // Same gate as book: Notify on book + configured. Failures do not fail cancel.
+                val tg = telegramStore.load(accountId)
+                if (tg.notifyOnBook && tg.isConfigured()) {
+                    val tgText = appContext.getString(
+                        R.string.telegram_cancel_message,
+                        existing.initials,
+                        dayText,
+                        time,
+                        existing.durationMin,
+                        staffName,
+                    )
+                    TelegramClient.sendMessage(tg.botToken, tg.chatId, tgText)
+                }
+
+                val bale = baleStore.load(accountId)
+                if (bale.notifyOnBook && bale.isConfigured()) {
+                    val baleText = appContext.getString(
+                        R.string.bale_cancel_message,
+                        existing.initials,
+                        dayText,
+                        time,
+                        existing.durationMin,
+                        staffName,
+                    )
+                    BaleClient.sendMessage(bale.botToken, bale.chatId, baleText)
+                }
+
+                // Same recipient as book: assigned staff email snapshot (personnelEmail).
+                val settings = notificationStore.load(accountId)
+                if (ReminderScheduler.canSendToPersonnel(settings, existing)) {
+                    val email = existing.personnelEmail.trim()
+                    val subject = appContext.getString(
+                        R.string.cancel_email_subject,
+                        existing.initials,
+                    )
+                    val body = appContext.getString(
+                        R.string.cancel_email_body,
+                        existing.initials,
+                        dayText,
+                        time,
+                        existing.durationMin,
+                    )
+                    SmtpClient.send(
+                        SmtpClient.MailRequest(
+                            host = settings.smtpHost,
+                            port = settings.smtpPort,
+                            useTls = settings.smtpUseTls,
+                            username = settings.smtpUsername,
+                            password = settings.smtpPassword,
+                            from = settings.smtpFrom,
+                            to = email,
+                            subject = subject,
+                            body = body,
+                        ),
                     )
                 }
             }
@@ -493,7 +558,7 @@ class HomeViewModel(
                 val body = appContext.getString(
                     R.string.move_email_body,
                     updated.initials,
-                    updated.day,
+                    displayDay(updated.day),
                     time,
                     updated.durationMin,
                 )
@@ -523,7 +588,7 @@ class HomeViewModel(
             val tgText = appContext.getString(
                 R.string.telegram_move_message,
                 updated.initials,
-                updated.day,
+                displayDay(updated.day),
                 time,
                 updated.durationMin,
                 person.name,
@@ -538,7 +603,7 @@ class HomeViewModel(
             val baleText = appContext.getString(
                 R.string.bale_move_message,
                 updated.initials,
-                updated.day,
+                displayDay(updated.day),
                 time,
                 updated.durationMin,
                 person.name,
@@ -547,7 +612,7 @@ class HomeViewModel(
         }
 
         val time = "%02d:%02d".format(updated.startMinute / 60, updated.startMinute % 60)
-        ClinicNotifier.notifyMoved(appContext, updated.initials, updated.day, time)
+        ClinicNotifier.notifyMoved(appContext, updated.initials, displayDay(updated.day), time)
 
         val clinic = clinicStore.load(accountId)
         if (clinic.isConfigured()) {
