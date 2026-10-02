@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.17.0">v0.17.0</a></em>
+  <em>Latest pre-release: <a href="https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.17.1">v0.17.1</a></em>
 </p>
 
 ---
@@ -21,7 +21,7 @@ Small clinics, counselors, and front-desk teams who want a **simple appointment 
 
 If you already self-host the original [Nobat](https://github.com/PouryaFA81/Nobat) server, keep that for privacy-first hosting. **Nobat Mobile** is the sibling product for people who just want an app on the phone.
 
-## What’s in the app (v0.17.0)
+## What’s in the app (v0.17.1)
 
 - **Local accounts** — Several profiles on one phone; password for create/change only; unlock with PIN/fingerprint; data stays on the device  
 - **Personnel** — Staff list (name, email, phone); book **Assign to** so SMTP staff notify + 1h reminder go to that person (not client confirmation)  
@@ -30,15 +30,15 @@ If you already self-host the original [Nobat](https://github.com/PouryaFA81/Noba
 - **Jalali in Persian** — FA uses the solar calendar (week starts شنبه); English stays Gregorian  
 - **Language** — فارسی (RTL) / English (LTR), including chrome and strings  
 - **Theme** — Dark (default) or Light  
-- **Email (SMTP)** — Save your mailbox, test send, staff notify on book/move, reminder **1 hour before**  
+- **Email (SMTP)** — Save your mailbox, test send, staff notify on book/move/cancel, reminder **1 hour before**  
 - **Evening digest** — Optional daily summary of **tomorrow’s** appointments (default 20:00) for **assigned staff/personnel**: SMTP per staff email, Telegram/Bale if Notify on book, Clinic relay `digest`, local notification; per-channel idempotent on WorkManager retry  
 - **SMS** — Opens your phone’s SMS app with a prefilled message (you tap Send)  
 - **Account hub** — Scrollable sections: Account Management, Preferences, Advanced Settings, About  
 - **About** — Version, check for updates, GitHub contact links  
 - **Local Backup & Restore** — Advanced Settings → Backup: save this account’s data to Downloads; restore from a file with a confirm dialog  
 - **Reports & Print PDF** — Advanced Settings → Reports: day/month range; on-device PDF; Share / Print  
-- **Telegram** — Integrations: your bot token + chat ID; Test send; optional notify on book (staff name + appointment in message)  
-- **Bale** — Integrations: your Bale bot token + chat ID; Test send; optional notify on book / move / evening digest (staff notify via official `tapi.bale.ai`)  
+- **Telegram** — Integrations: your bot token + chat ID; Test send; optional notify on book/move/cancel (staff; Jalali dates in Persian)  
+- **Bale** — Integrations: your Bale bot token + chat ID; Test send; optional notify on book / move / cancel / evening digest (staff notify via official `tapi.bale.ai`; Jalali dates in Persian)  
 - **Role & My schedule** — Admin / Secretary or Staff; link to personnel; Admin Everyone + My schedule tabs; Staff My schedule only (no FAB); local notify on book/cancel/move  
 - **Clinic notifications** — Dual path: **Relay code** (hosted Redeem) or **Your own relay**; own-relay Share embeds `nobat1:` host/topic/token; **hosted Share** is opaque `nobatH1:` only (no relay address); Staff paste → Connect (full `nobat1:` / `nobatR1:` today; opaque pending future resolve); Hosted chip hides real host; in-app alerts for assigned book/cancel/move  
 - **Coming soon (shells)** — Google Drive, Google Calendar, Drive backup  
@@ -99,7 +99,7 @@ In the app (from **0.15.1**, opaque hosted Share from **0.16.1**): **Clinic code
 
 ### Option A — download the APK (recommended)
 
-1. Open [Releases → v0.17.0](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.17.0) (or the latest pre-release)
+1. Open [Releases → v0.17.1](https://github.com/PouryaFA81/Nobat-Mobile/releases/tag/v0.17.1) (or the latest pre-release)
 2. Download the `.apk`
 3. On your phone, allow install from that source
 4. Open **Nobat Mobile**, create or unlock a local account, then use the calendar
@@ -118,7 +118,7 @@ The first sync can take a few minutes.
 
 ## Status
 
-Pre-release dogfood builds. Booking, Move, accounts, roles/My schedule, clinic notifications (hosted opaque Share), evening digest, app lock, language, SMTP staff notify + reminders, Telegram, Bale, and themes are in **v0.17.0**. Not yet: recurring, waitlist, conflict/hours checks, client confirmation, Drive, Calendar. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
+Pre-release dogfood builds. Booking, Move, accounts, roles/My schedule, clinic notifications (hosted opaque Share), evening digest, app lock, language, SMTP staff notify + reminders, Telegram, Bale, and themes are in **v0.17.1**. Not yet: recurring, waitlist, conflict/hours checks, client confirmation, Drive, Calendar. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
 
 Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
 

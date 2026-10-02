@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="telegram_cancel_message">نوبت لغو شد: %1$s — %2$s ساعت %3$s (%4$d دقیقه) · پرسنل: %5$s</string>
+    <string name="bale_cancel_message">نوبت لغو شد: %1$s — %2$s ساعت %3$s (%4$d دقیقه) · پرسنل: %5$s</string>
+    <string name="cancel_email_subject">لغو نوبت: %1$s</string>
+    <string name="cancel_email_body">نوبت لغو شد: %1$s — %2$s ساعت %3$s (%4$d دقیقه)</string>
+</resources>
