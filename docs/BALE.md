@@ -10,7 +10,7 @@ Persian: [راهنمای راه‌اندازی بله](BALE.fa.md)
 2. A bot (from [@Botfather](https://ble.ir/botfather) in Bale)  
 3. The **chat ID** where messages should land (usually a private chat with the bot, or a group the bot is in)
 
-Then in the app: **Bot token** · **Chat ID** → **Save** → **Test send**. Turn on **Notify on book** so the assigned personnel gets a message when you book or move (and for evening digest when that job runs) — alongside SMTP / Telegram / Clinic if those are enabled.
+Then in the app: **Bot token** · **Chat ID** → **Save** → **Test send**. Turn on **Notify on book** so the assigned personnel gets a message when you **book**, **move**, or **cancel** (and for evening digest when that job runs). In Persian, dates in those messages use the Jalali calendar label; English stays Gregorian (`yyyy-MM-dd`). SMTP / Telegram / Clinic stay optional extras.
 
 ---
 
@@ -49,7 +49,7 @@ Then in the app: **Bot token** · **Chat ID** → **Save** → **Test send**. Tu
 | **Bot token** | From Botfather in Bale |
 | **Chat ID** | From `getUpdates` |
 | **Test send** | Sends a short test message |
-| **Notify on book** | On = staff message on **book** and **move** with **Assign to**, and on **evening digest** when configured |
+| **Notify on book** | On = staff message on **book**, **move**, and **cancel** with **Assign to**, and on **evening digest** when configured |
 
 Token and chat ID stay **on this phone**, for the local account you’re using.
 
@@ -61,7 +61,6 @@ API used by the app: `https://tapi.bale.ai/bot<token>/sendMessage` ([official do
 
 - If **Test send** fails, check the token, that you started the bot chat, and that the chat ID matches  
 - Staff who don’t use Bale can stay on **SMTP** or **Telegram** instead  
-- Cancel does not send a Bale message in this version (same as Telegram)  
 
 ## Need help?
 
