@@ -57,7 +57,8 @@ Token and chat ID stay **on this phone**, for the local account you’re using.
 
 ## Tips
 
-- If **Test send** fails, check the token, that you started the bot chat, and that the chat ID matches  
+- If messages stop arriving, run **Test send** first. From **0.17.2** it says whether the problem is the **network**, the **token**, or the **chat**  
+- Check the token and that you started the bot chat. The chat ID must match; digits typed with a Persian keyboard are converted automatically  
 - For staff who don’t use Telegram yet, keep **SMTP** on as the main path  
 - **Bale** uses the same Integrations form (from **0.17.0**)  
 

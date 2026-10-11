@@ -7,6 +7,9 @@ import app.nobat.mobile.notify.TelegramClient
 import app.nobat.mobile.notify.BaleSettingsStore
 import app.nobat.mobile.notify.BaleSettings
 import app.nobat.mobile.notify.BaleClient
+import app.nobat.mobile.notify.BotFailureReason
+import app.nobat.mobile.notify.BotInput
+import app.nobat.mobile.notify.botFailure
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
@@ -97,9 +100,23 @@ fun IntegrationsPane(
     val scope = rememberCoroutineScope()
     val soon = stringResource(R.string.coming_soon)
     val savedMsg = stringResource(R.string.saved)
-    val secureStorageFailedMsg = stringResource(R.string.secure_storage_failed)
-    val sendOkMsg = stringResource(R.string.send_ok)
+        val sendOkMsg = stringResource(R.string.send_ok)
     val failedMsg = stringResource(R.string.send_failed)
+    val failedNetworkMsg = stringResource(R.string.send_failed_network)
+    val failedAuthMsg = stringResource(R.string.send_failed_auth)
+    val failedChatMsg = stringResource(R.string.send_failed_chat)
+    val unreadableMsg = stringResource(R.string.integration_settings_unreadable)
+    val tgUnreadable = !telegramStore.isSecureStorageAvailable()
+    val baleUnreadable = !baleStore.isSecureStorageAvailable()
+    fun failureText(result: Result<Unit>): String {
+        val f = result.botFailure() ?: return failedMsg
+        return when (f.reason) {
+            BotFailureReason.Network -> failedNetworkMsg
+            BotFailureReason.Auth -> failedAuthMsg
+            BotFailureReason.Chat -> failedChatMsg
+            BotFailureReason.Other -> f.httpCode?.let { "$failedMsg ($it)" } ?: failedMsg
+        }
+    }
     val testBody = stringResource(R.string.telegram_test_body)
     val baleTestBody = stringResource(R.string.bale_test_body)
 
@@ -146,14 +163,14 @@ fun IntegrationsPane(
     }
 
     fun currentSettings() = TelegramSettings(
-        botToken = botToken,
-        chatId = chatId,
+        botToken = BotInput.sanitizeToken(botToken),
+        chatId = BotInput.sanitizeChatId(chatId),
         notifyOnBook = notifyOnBook,
     )
 
     fun currentBaleSettings() = BaleSettings(
-        botToken = baleBotToken,
-        chatId = baleChatId,
+        botToken = BotInput.sanitizeToken(baleBotToken),
+        chatId = BotInput.sanitizeChatId(baleChatId),
         notifyOnBook = baleNotifyOnBook,
     )
 
@@ -186,6 +203,14 @@ fun IntegrationsPane(
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
+            }
+
+            if (tgUnreadable) {
+                Text(
+                    text = unreadableMsg,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
 
             Row(
@@ -260,10 +285,13 @@ fun IntegrationsPane(
                         if (saving || accountId <= 0L) return@Button
                         saving = true
                         scope.launch {
-                            val saved = telegramStore.save(accountId, currentSettings())
+                            val cur = currentSettings()
+                            botToken = cur.botToken
+                            chatId = cur.chatId
+                            val saved = telegramStore.save(accountId, cur)
                             saving = false
                             snackbar.showSnackbar(
-                                if (saved.isSuccess) savedMsg else secureStorageFailedMsg,
+                                if (saved.isSuccess) savedMsg else unreadableMsg,
                             )
                         }
                     },
@@ -280,10 +308,12 @@ fun IntegrationsPane(
                         testing = true
                         scope.launch {
                             val s = currentSettings()
+                            botToken = s.botToken
+                            chatId = s.chatId
                             val saved = telegramStore.save(accountId, s)
                             if (saved.isFailure) {
                                 testing = false
-                                snackbar.showSnackbar(secureStorageFailedMsg)
+                                snackbar.showSnackbar(unreadableMsg)
                                 return@launch
                             }
                             val result = TelegramClient.sendMessage(
@@ -293,7 +323,7 @@ fun IntegrationsPane(
                             )
                             testing = false
                             snackbar.showSnackbar(
-                                if (result.isSuccess) sendOkMsg else failedMsg,
+                                if (result.isSuccess) sendOkMsg else failureText(result),
                             )
                         }
                     },
@@ -335,6 +365,14 @@ fun IntegrationsPane(
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
+            }
+
+            if (baleUnreadable) {
+                Text(
+                    text = unreadableMsg,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
 
             Row(
@@ -409,10 +447,13 @@ fun IntegrationsPane(
                         if (baleSaving || accountId <= 0L) return@Button
                         baleSaving = true
                         scope.launch {
-                            val saved = baleStore.save(accountId, currentBaleSettings())
+                            val cur = currentBaleSettings()
+                            baleBotToken = cur.botToken
+                            baleChatId = cur.chatId
+                            val saved = baleStore.save(accountId, cur)
                             baleSaving = false
                             snackbar.showSnackbar(
-                                if (saved.isSuccess) savedMsg else secureStorageFailedMsg,
+                                if (saved.isSuccess) savedMsg else unreadableMsg,
                             )
                         }
                     },
@@ -429,10 +470,12 @@ fun IntegrationsPane(
                         baleTesting = true
                         scope.launch {
                             val s = currentBaleSettings()
+                            baleBotToken = s.botToken
+                            baleChatId = s.chatId
                             val saved = baleStore.save(accountId, s)
                             if (saved.isFailure) {
                                 baleTesting = false
-                                snackbar.showSnackbar(secureStorageFailedMsg)
+                                snackbar.showSnackbar(unreadableMsg)
                                 return@launch
                             }
                             val result = BaleClient.sendMessage(
@@ -442,7 +485,7 @@ fun IntegrationsPane(
                             )
                             baleTesting = false
                             snackbar.showSnackbar(
-                                if (result.isSuccess) sendOkMsg else failedMsg,
+                                if (result.isSuccess) sendOkMsg else failureText(result),
                             )
                         }
                     },

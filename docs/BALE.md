@@ -59,7 +59,8 @@ API used by the app: `https://tapi.bale.ai/bot<token>/sendMessage` ([official do
 
 ## Tips
 
-- If **Test send** fails, check the token, that you started the bot chat, and that the chat ID matches  
+- If messages stop arriving, run **Test send** first. From **0.17.2** it says whether the problem is the **network**, the **token**, or the **chat**  
+- Check the token and that you started the bot chat. The chat ID must match; digits typed with a Persian keyboard are converted automatically  
 - Staff who don’t use Bale can stay on **SMTP** or **Telegram** instead  
 
 ## Need help?

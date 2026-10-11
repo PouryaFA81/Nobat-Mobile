@@ -293,4 +293,8 @@
     <string name="hosted_code_hint">این کد را با پرسنل به اشتراک بگذارید. آدرس رله در آن نیست.</string>
     <string name="secure_storage_failed">فضای امن در دسترس نیست. اطلاعات ذخیره نشد.</string>
 
+    <string name="send_failed_network">به سرور نرسید. اتصال یا VPN را بررسی کنید.</string>
+    <string name="send_failed_auth">توکن ربات پذیرفته نشد. توکن را بررسی کنید.</string>
+    <string name="send_failed_chat">ربات نمی‌تواند در این گفتگو پیام بفرستد. شناسه گفتگو و عضویت ربات را بررسی کنید.</string>
+    <string name="integration_settings_unreadable">تنظیمات ذخیره‌شده خوانده نشد. توکن و شناسه گفتگو را دوباره وارد کنید.</string>
 </resources>
