@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.17.2] - unreleased
+
+### Fixed
+- Telegram/Bale **Test send** now shows the real reason (network / token rejected / chat not allowed / HTTP code) instead of a generic failure; the bot token is never included in messages
+- Token and chat ID are sanitized before save and send (Persian/Arabic-Indic digits → ASCII; invisible/format/whitespace characters such as ZWNJ, RLM, LRM, BOM removed)
+- Unreadable secure storage is shown in the Telegram and Bale panes
+
 ## [0.17.0] - 2026-10-02
 
 ### Added

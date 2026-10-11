@@ -21,7 +21,7 @@ Small clinics, counselors, and front-desk teams who want a **simple appointment 
 
 If you already self-host the original [Nobat](https://github.com/PouryaFA81/Nobat) server, keep that for privacy-first hosting. **Nobat Mobile** is the sibling product for people who just want an app on the phone.
 
-## What’s in the app (v0.17.1)
+## What’s in the app (v0.17.2)
 
 - **Local accounts** — Several profiles on one phone; password for create/change only; unlock with PIN/fingerprint; data stays on the device  
 - **Personnel** — Staff list (name, email, phone); book **Assign to** so SMTP staff notify + 1h reminder go to that person (not client confirmation)  
@@ -118,7 +118,7 @@ The first sync can take a few minutes.
 
 ## Status
 
-Pre-release dogfood builds. Booking, Move, accounts, roles/My schedule, clinic notifications (hosted opaque Share), evening digest, app lock, language, SMTP staff notify + reminders, Telegram, Bale, and themes are in **v0.17.1**. Not yet: recurring, waitlist, conflict/hours checks, client confirmation, Drive, Calendar. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
+Pre-release dogfood builds. Booking, Move, accounts, roles/My schedule, clinic notifications (hosted opaque Share), evening digest, app lock, language, SMTP staff notify + reminders, Telegram, Bale, and themes are in **v0.17.2**. Not yet: recurring, waitlist, conflict/hours checks, client confirmation, Drive, Calendar. See [CHANGELOG](CHANGELOG.md) and [Releases](https://github.com/PouryaFA81/Nobat-Mobile/releases) for the full trail.
 
 Want the self-hosted edition instead? → **[Nobat](https://github.com/PouryaFA81/Nobat)**
 
